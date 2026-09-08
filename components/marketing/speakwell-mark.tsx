@@ -2,8 +2,8 @@ import Svg, { Circle, Ellipse } from 'react-native-svg';
 
 import { useTheme } from '@/hooks/use-theme';
 
-/** Clarity's seven-dot brand mark, traced from the source app-icon artwork. */
-export function ClarityMark({ size }: { size: number }) {
+/** SpeakWell's seven-dot brand mark, traced from the source app-icon artwork. */
+export function SpeakWellMark({ size }: { size: number }) {
   const { colors } = useTheme();
 
   return (

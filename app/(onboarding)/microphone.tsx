@@ -25,7 +25,7 @@ const SIMULATED_SPEECH =
   process.env.EXPO_PUBLIC_MOCK_PRACTICE === '1';
 
 const ROWS: { icon: IconSvgElement; text: string }[] = [
-  { icon: Mic01Icon, text: 'Microphone, so Clarity can hear you read.' },
+  { icon: Mic01Icon, text: 'Microphone, so SpeakWell can hear you read.' },
   { icon: VoiceIcon, text: 'Speech recognition, so it can follow the words and score them.' },
   { icon: Shield01Icon, text: 'Your recording is sent to a speech service to be scored.' },
 ];
@@ -119,13 +119,13 @@ export default function MicrophoneStep() {
           : { title: 'Enable microphone & speech', action: request };
 
   const note = writeFailed
-    ? 'Clarity could not finish setting up on this device. Tap again to retry.'
+    ? 'SpeakWell could not finish setting up on this device. Tap again to retry.'
     : state === 'simulated'
       ? 'This simulator build uses scripted speech, so it does not need microphone access.'
       : !available
       ? 'Speech recognition is not available on this device. Simulators usually lack it. Try a physical device.'
       : state === 'blocked'
-        ? 'Clarity cannot score a reading without the microphone. Turn it on in Settings whenever you are ready.'
+        ? 'SpeakWell cannot score a reading without the microphone. Turn it on in Settings whenever you are ready.'
         : state === 'restricted'
           ? 'Speech recognition is turned off by a restriction on this device. A parent or an administrator controls it.'
           : null;
@@ -145,7 +145,7 @@ export default function MicrophoneStep() {
 
   return (
     <OnboardingScreen
-      title={ready ? 'Your practice is ready' : 'Let Clarity hear you'}
+      title={ready ? 'Your practice is ready' : 'Let SpeakWell hear you'}
       subtitle={ready
         ? 'Start with a short passage or speak freely. Your first session is up to you.'
         : 'Enable your microphone and speech recognition to get feedback. Your device may ask for each separately.'}

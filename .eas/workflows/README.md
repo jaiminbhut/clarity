@@ -1,4 +1,4 @@
-# Clarity agentic workflows — TestFlight feedback in, verified fix PR out
+# SpeakWell agentic workflows — TestFlight feedback in, verified fix PR out
 
 Two entry points, one fix loop:
 

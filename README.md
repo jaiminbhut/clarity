@@ -1,15 +1,15 @@
-# Clarity
+# SpeakWell
 
-![Clarity app screens](gh-preview.png)
+![SpeakWell app screens](gh-preview.png)
 
-Clarity is a speech-practice app for iOS and Android. Read a passage, work
-through a one-minute drill, or speak off the cuff. Clarity follows along,
+SpeakWell is a speech-practice app for iOS and Android. Read a passage, work
+through a one-minute drill, or speak off the cuff. SpeakWell follows along,
 scores the session, and turns the result into a concrete next step.
 
 [Website](https://exponathan-clarity.expo.app/) ·
 [Join the iOS beta](https://testflight.apple.com/join/CMRNm4w4)
 
-## What Clarity does
+## What SpeakWell does
 
 - **Guided and freestyle practice.** Use the built-in library, add your own
   passage, target one speaking skill with a drill, or answer a random prompt.
@@ -20,7 +20,7 @@ scores the session, and turns the result into a concrete next step.
   sessions also include a word-by-word breakdown and recording playback.
 - **AI coaching.** The result screen streams a short summary and three tips
   grounded in that session's measurements.
-- **Targeted follow-up.** Clarity keeps a running list of difficult words, plays
+- **Targeted follow-up.** SpeakWell keeps a running list of difficult words, plays
   model pronunciation, and can generate a short passage that practices them.
 - **Progress tracking.** Week, month, and all-time views cover score trends,
   practice time, sessions, streaks, skill movement, records, and mastered words.
@@ -32,10 +32,10 @@ scores the session, and turns the result into a concrete next step.
 
 1. `expo-speech-recognition` streams native transcription while the app records
    the session audio.
-2. Clarity's incremental aligner maps that transcript onto the reference text.
+2. SpeakWell's incremental aligner maps that transcript onto the reference text.
    It handles skipped, repeated, inserted, and partially spoken words while the
    teleprompter is moving.
-3. When Azure Speech credentials are available, Clarity adds word, syllable,
+3. When Azure Speech credentials are available, SpeakWell adds word, syllable,
    phoneme, fluency, and prosody detail. Without Azure, the local alignment still
    produces a complete fallback result.
 4. The app writes the result to MMKV first. A single sync bridge sends local
@@ -52,13 +52,13 @@ scores the session, and turns the result into a concrete next step.
 - Clerk for authentication and Convex for account data sync
 - MMKV for synchronous, offline-first local storage
 - Expo Router API routes, Vercel AI Gateway, and AI SDK 7 for generated features
-- RevenueCat for Clarity Pro purchases and subscription state
+- RevenueCat for SpeakWell Pro purchases and subscription state
 - EAS Observe for startup, navigation, practice, auth, and error telemetry
 - SF Pro Rounded, Hugeicons, Reanimated, and Expo Glass Effect for the UI
 
 ## Run locally
 
-Clarity requires a development build. Expo Go cannot load the native modules
+SpeakWell requires a development build. Expo Go cannot load the native modules
 used by speech recognition, MMKV, and RevenueCat.
 
 ### Requirements

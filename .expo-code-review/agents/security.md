@@ -23,7 +23,7 @@ average severity.
 - Missing validation on untrusted input at a trust boundary.
 - Insecure file permissions, or writing secrets to world-readable paths.
 
-## Repo-specific sensitive surfaces (speech-companion / Clarity)
+## Repo-specific sensitive surfaces (speech-companion / SpeakWell)
 
 This is an Expo app (client bundle ships to users) plus expo-router API routes
 under `app/api/*+api.ts` deployed to EAS Hosting. Its sensitive surfaces:

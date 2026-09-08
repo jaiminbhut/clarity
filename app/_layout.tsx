@@ -328,7 +328,7 @@ function RootLayout() {
             <ConvexRoot>
             <AuthBridge />
             <ConvexSync />
-            {/* Configures RevenueCat and holds the Clarity Pro entitlement for
+            {/* Configures RevenueCat and holds the SpeakWell Pro entitlement for
               every screen. Above the routes so the first render of any screen
               can already branch on it, and outside the font gate so the SDK
               starts its first customer-info read while the fonts load. */}

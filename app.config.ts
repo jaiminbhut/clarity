@@ -54,7 +54,7 @@ function getIosIcon() {
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const iosIcon = getIosIcon();
-  const baseScheme = typeof config.scheme === 'string' ? config.scheme : 'clarity';
+  const baseScheme = typeof config.scheme === 'string' ? config.scheme : 'speakwell';
   const easProjectId = (config.extra?.eas as { projectId?: unknown } | undefined)?.projectId;
   const updatesUrl =
     typeof easProjectId === 'string' ? `https://u.expo.dev/${easProjectId}` : config.updates?.url;
@@ -69,8 +69,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     ...config,
-    slug: config.slug ?? 'clarity',
-    name: getName(config.name ?? 'Clarity'),
+    slug: config.slug ?? 'speakwell',
+    name: getName(config.name ?? 'SpeakWell'),
     scheme: getScheme(baseScheme),
     runtimeVersion: {
       policy: 'appVersion',

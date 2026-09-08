@@ -100,7 +100,7 @@ export function usePaywall() {
     [available, settle],
   );
 
-  /** Shows the plans only when Clarity Pro is missing. */
+  /** Shows the plans only when SpeakWell Pro is missing. */
   const presentPaywallIfNeeded = useCallback(
     async (offering?: PurchasesOffering): Promise<PaywallOutcome> => {
       if (!available) return 'error';

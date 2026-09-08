@@ -1,5 +1,5 @@
 /**
- * Self-tests for the Clarity Pro entitlement read model. Pure JS — run with:
+ * Self-tests for the SpeakWell Pro entitlement read model. Pure JS — run with:
  *   bun scripts/test-entitlements.ts
  *
  * These matter more than their size suggests: every one of these branches is a
@@ -117,7 +117,7 @@ function customer(options: {
 
   // A different entitlement being active must not unlock Pro either.
   const other = customer({ active: [entitlement({ identifier: 'Some Other Tier' })] });
-  assertEq(isPro(other), false, 'another entitlement does not unlock Clarity Pro');
+  assertEq(isPro(other), false, 'another entitlement does not unlock SpeakWell Pro');
 }
 
 {

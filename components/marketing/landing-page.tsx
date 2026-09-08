@@ -27,12 +27,12 @@ import { ThemedText } from '@/components/ui';
 import { marketing, motion, radius, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import { ClarityMark } from './clarity-mark';
+import { SpeakWellMark } from './speakwell-mark';
 
 const SCREENSHOTS = [
   {
     source: require('@/assets/marketing/screenshots/screen-01.jpg'),
-    alt: 'Clarity following a passage word by word while it is read aloud',
+    alt: 'SpeakWell following a passage word by word while it is read aloud',
   },
   {
     source: require('@/assets/marketing/screenshots/screen-02.jpg'),
@@ -151,11 +151,11 @@ function scrollTo(anchor: string) {
 function Wordmark({ mobile = false }: { mobile?: boolean }) {
   return (
     <View style={[styles.wordmark, mobile && styles.wordmarkMobile]}>
-      <ClarityMark size={mobile ? marketing.size.navMarkMobile : marketing.size.navMark} />
+      <SpeakWellMark size={mobile ? marketing.size.navMarkMobile : marketing.size.navMark} />
       <ThemedText
         variant={mobile ? 'marketingWordmarkMobile' : 'marketingWordmark'}
         tone="marketingPrimary">
-        clarity
+        speakwell
       </ThemedText>
     </View>
   );
@@ -274,7 +274,7 @@ function AppIcon({ mobile }: { mobile: boolean }) {
         { borderColor: colors.marketingLine },
         mobile && styles.appIconMobile,
       ]}>
-      <ClarityMark size={mobile ? marketing.size.appIconMarkMobile : marketing.size.appIconMark} />
+      <SpeakWellMark size={mobile ? marketing.size.appIconMarkMobile : marketing.size.appIconMark} />
     </View>
   );
 }
@@ -370,7 +370,7 @@ function HeroArtwork({
   return (
     <View style={[styles.artwork, { height: frameHeight, width: frameWidth }]}>
       <Image
-        accessibilityLabel="A hand holding a phone while Clarity follows a spoken passage"
+        accessibilityLabel="A hand holding a phone while SpeakWell follows a spoken passage"
         source={HERO_IMAGE}
         resizeMode="cover"
         style={{
@@ -456,7 +456,7 @@ function Hero({
                   ),
             },
           ]}>
-          Clarity listens while you practice, follows every word, and shows you what to work on
+          SpeakWell listens while you practice, follows every word, and shows you what to work on
           next.
         </ThemedText>
       </MarketingReveal>
@@ -467,7 +467,7 @@ function Hero({
             icon={ArrowRight01Icon}
             // The chevron's path sits just below the SF Rounded label's optical center.
             iconStyle={{ transform: [{ translateY: -0.5 }] }}
-            label="Get Clarity"
+            label="Get SpeakWell"
             mobile={!desktop}
             primary
             disabled
@@ -586,8 +586,8 @@ function Features({
             },
           ]}>
           {desktop
-            ? 'Choose how you want to practice. Clarity listens, scores the skills that matter, and gives you one clear thing to work on next.'
-            : 'Choose how you want to practice. Clarity scores the skills that matter and gives you one clear thing to work on next.'}
+            ? 'Choose how you want to practice. SpeakWell listens, scores the skills that matter, and gives you one clear thing to work on next.'
+            : 'Choose how you want to practice. SpeakWell scores the skills that matter and gives you one clear thing to work on next.'}
         </ThemedText>
       </View>
 
@@ -695,10 +695,10 @@ export function MarketingLandingPage() {
   return (
     <>
       <Head>
-        <title>Clarity: Speak clearly. Sound like you.</title>
+        <title>SpeakWell: Speak clearly. Sound like you.</title>
         <meta
           name="description"
-          content="Clarity follows every word while you practice and shows you what to work on next."
+          content="SpeakWell follows every word while you practice and shows you what to work on next."
         />
         <link rel="preload" as="image" href={HERO_IMAGE_URI} />
       </Head>

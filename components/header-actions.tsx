@@ -17,7 +17,7 @@ const PRO_GOLD = '#FFB000';
 
 function proButtonLabel(isLoading: boolean, isPro: boolean): string {
   if (isLoading) return 'Checking your subscription';
-  return isPro ? 'Manage Clarity Pro' : 'Get Clarity Pro';
+  return isPro ? 'Manage SpeakWell Pro' : 'Get SpeakWell Pro';
 }
 
 /**

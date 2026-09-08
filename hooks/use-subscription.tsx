@@ -1,5 +1,5 @@
 /**
- * Clarity Pro entitlement state for the whole app.
+ * SpeakWell Pro entitlement state for the whole app.
  *
  * One provider owns one subscription to RevenueCat's customer info updates, and
  * every screen reads the derived `access` off context. The alternative — each
@@ -162,7 +162,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * Reads Clarity Pro state. Throws outside the provider rather than defaulting,
+ * Reads SpeakWell Pro state. Throws outside the provider rather than defaulting,
  * because a silent "not subscribed" would look exactly like a real answer and
  * hide the missing provider until a customer reported a lost unlock.
  */
@@ -174,7 +174,7 @@ export function useSubscription(): SubscriptionValue {
   return value;
 }
 
-/** Shorthand for the common case: gate a feature on Clarity Pro. */
+/** Shorthand for the common case: gate a feature on SpeakWell Pro. */
 export function useIsPro(): boolean {
   return useSubscription().access.isPro;
 }

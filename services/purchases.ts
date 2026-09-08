@@ -270,7 +270,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseOu
 
 export type RestoreOutcome =
   | { outcome: 'restored'; customerInfo: CustomerInfo }
-  /** The restore succeeded but found no Clarity Pro purchase on this store
+  /** The restore succeeded but found no SpeakWell Pro purchase on this store
    * account. Worth a distinct message: "nothing found" and "restore failed"
    * need different next steps. */
   | { outcome: 'nothingToRestore'; customerInfo: CustomerInfo }

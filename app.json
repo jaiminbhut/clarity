@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Clarity",
-    "slug": "clarity",
-    "scheme": "clarity",
+    "name": "SpeakWell",
+    "slug": "speakwell",
+    "scheme": "speakwell",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

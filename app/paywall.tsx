@@ -95,7 +95,7 @@ function PurchasesUnavailable() {
         <HugeiconsIcon icon={Crown02Icon} size={32} color={PRO_GOLD} />
       </View>
       <ThemedText variant="title" style={styles.centeredText}>
-        Clarity Pro is unavailable
+        SpeakWell Pro is unavailable
       </ThemedText>
       <ThemedText variant="subheadProse" tone="secondary" style={styles.centeredText}>
         This build has no store connected, so plans cannot load. Try the app on a device or
@@ -169,7 +169,7 @@ function PlanCard({
 }
 
 /**
- * The Clarity Pro paywall, fully in-app.
+ * The SpeakWell Pro paywall, fully in-app.
  *
  * Layout and copy live here; prices come from the store via the Current
  * offering's packages, so a price change in App Store Connect (or a plan-mix
@@ -266,7 +266,7 @@ export default function PaywallScreen() {
       case 'pending':
         Alert.alert(
           'Payment pending',
-          'Your payment is still processing. Clarity Pro unlocks as soon as it clears.',
+          'Your payment is still processing. SpeakWell Pro unlocks as soon as it clears.',
         );
         return;
       case 'failed':
@@ -294,7 +294,7 @@ export default function PaywallScreen() {
       // between the customer retrying and the customer contacting support.
       Alert.alert(
         'Nothing to restore',
-        'We could not find a Clarity Pro purchase on this store account. Make sure you are signed in with the account you bought it on.',
+        'We could not find a SpeakWell Pro purchase on this store account. Make sure you are signed in with the account you bought it on.',
       );
       return;
     }
@@ -314,7 +314,7 @@ export default function PaywallScreen() {
         showsVerticalScrollIndicator={false}>
         <View style={styles.brandRow}>
           <HugeiconsIcon icon={Crown02Icon} size={28} color={PRO_GOLD} />
-          <ThemedText variant="title">Clarity</ThemedText>
+          <ThemedText variant="title">SpeakWell</ThemedText>
           {isLiquidGlassAvailable() ? (
             <GlassView glassEffectStyle="regular" tintColor={colors.inverseSurface} style={styles.proBadge}>
               <ThemedText variant="callout" tone="inverse">
@@ -331,7 +331,7 @@ export default function PaywallScreen() {
         </View>
 
         <ThemedText variant="largeTitle" style={styles.headline}>
-          Get the full power of Clarity
+          Get the full power of SpeakWell
         </ThemedText>
 
         <View style={styles.features}>
@@ -385,7 +385,7 @@ export default function PaywallScreen() {
         )}
 
         <PrimaryButton
-          title="Continue with Clarity Pro"
+          title="Continue with SpeakWell Pro"
           onPress={buy}
           disabled={busy || !selected}
           style={styles.cta}

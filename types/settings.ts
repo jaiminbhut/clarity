@@ -19,7 +19,7 @@ export type Settings = {
    */
   accentLocale: AccentLocale;
   /**
-   * The user's answer to "use my data to improve Clarity".
+   * The user's answer to "use my data to improve SpeakWell".
    *
    * NOT WIRED TO ANYTHING YET. It is stored and shown, and nothing reads it, so
    * the Settings copy deliberately states the preference rather than describing

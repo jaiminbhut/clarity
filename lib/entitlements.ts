@@ -1,5 +1,5 @@
 /**
- * Everything the app knows about Clarity Pro access, read off a RevenueCat
+ * Everything the app knows about SpeakWell Pro access, read off a RevenueCat
  * `CustomerInfo`. PURE — no React, no SDK calls, no persistence — so it runs
  * under bun in scripts/tests and can be driven from a fixture.
  *
@@ -25,7 +25,7 @@ import { formatMonthDay } from '@/lib/format';
  * `customerInfo.entitlements.active`, so every customer reads as not
  * subscribed. If subscribers report a missing unlock, check this first.
  */
-export const PRO_ENTITLEMENT_ID = 'Clarity Pro';
+export const PRO_ENTITLEMENT_ID = 'SpeakWell Pro';
 
 /**
  * Access states worth telling the customer apart. The first four all mean the
@@ -69,7 +69,7 @@ export const NO_PRO_ACCESS: ProAccess = {
 };
 
 /**
- * The active Clarity Pro entitlement, or null.
+ * The active SpeakWell Pro entitlement, or null.
  *
  * Reads `entitlements.active`, not `entitlements.all`: `all` also holds expired
  * entitlements, so keying into it would grant Pro to every past subscriber.

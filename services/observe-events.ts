@@ -58,7 +58,7 @@ function setGlobal(key: string, value: string | number | boolean) {
 setGlobal('practice_engine', process.env.EXPO_PUBLIC_MOCK_PRACTICE === '1' ? 'mock' : 'real');
 
 /**
- * Whether Clarity Pro is active. Called by the subscription provider whenever
+ * Whether SpeakWell Pro is active. Called by the subscription provider whenever
  * the entitlement resolves or changes, so every later metric carries the tier
  * the customer was actually on — including startup TTI, which is the one place
  * a slow first customer-info read would show up.

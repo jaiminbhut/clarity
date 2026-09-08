@@ -180,7 +180,7 @@ export default function SettingsScreen() {
 
   const confirmSignOut = () => {
     Haptics.selectionAsync();
-    Alert.alert('Sign out of Clarity?', 'Your practice history on this device is removed.', [
+    Alert.alert('Sign out of SpeakWell?', 'Your practice history on this device is removed.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign out',
@@ -205,7 +205,7 @@ export default function SettingsScreen() {
     Haptics.selectionAsync();
     Alert.alert(
       'Delete your account?',
-      'This removes your account and everything Clarity has stored for it. It cannot be undone.',
+      'This removes your account and everything SpeakWell has stored for it. It cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -361,7 +361,7 @@ export default function SettingsScreen() {
 
         <Eyebrow>WHAT YOU WANT TO WORK ON</Eyebrow>
         <Blurb>
-          This picks your early suggestions. Once you have a few scored sessions, Clarity follows
+          This picks your early suggestions. Once you have a few scored sessions, SpeakWell follows
           your measured results instead.
         </Blurb>
         <SettingsCard>
@@ -379,7 +379,7 @@ export default function SettingsScreen() {
           <RowDivider />
           <ChoiceListRow
             title="Not sure yet"
-            caption="Start with a mix and let Clarity work it out."
+            caption="Start with a mix and let SpeakWell work it out."
             selected={prioritySkill === null}
             onSelect={() => choose<SkillKey | null>(prioritySkill, null, setPrioritySkill)}
           />
@@ -390,7 +390,7 @@ export default function SettingsScreen() {
           <View style={styles.row}>
             <View style={styles.rowText}>
               <ThemedText variant="headline" weight="regular">
-                Use my data to improve Clarity
+                Use my data to improve SpeakWell
               </ThemedText>
             </View>
             {/* The platform switch, unwrapped. It already carries the design
