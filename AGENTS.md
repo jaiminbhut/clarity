@@ -42,9 +42,11 @@ The spacing whitelist is the scale in `constants/spacing.ts` — update both tog
 
 # Typography
 
-All text uses SF Pro Rounded on iOS and web, bundled in `assets/fonts/` and loaded at runtime in `app/_layout.tsx` (Expo Go can't embed fonts at build time; the expo-font config plugin in `app.json` covers dev builds). Android uses Google Sans Flex Rounded: one family with nine weights in `assets/fonts/android/`, linked at build time by the same plugin as an Android font XML resource under the name `GoogleSansFlexRounded`. Those files are static instances of the Google Sans Flex variable font with the ROND axis pinned to 100; regenerate them with fontTools `varLib.instancer` if one changes.
+All text uses SF Pro Rounded on iOS, bundled in `assets/fonts/` and loaded at runtime in `app/_layout.tsx` (Expo Go can't embed fonts at build time; the expo-font config plugin in `app.json` covers dev builds). Android uses Google Sans Flex Rounded: one family with nine weights in `assets/fonts/android/`, linked at build time by the same plugin as an Android font XML resource under the name `GoogleSansFlexRounded`. Those files are static instances of the Google Sans Flex variable font with the ROND axis pinned to 100; regenerate them with fontTools `varLib.instancer` if one changes.
 
-A face is a `fonts.<name>` object from `@/constants/theme` (`regular`, `medium`, `semibold`, `bold`, `heavy`), spread into a style. On iOS it is a single-face `fontFamily` with no weight. On Android it is the family plus a `fontWeight`. Never set a bare `fontWeight` or `fontFamily` string: on iOS a mismatched weight makes the system synthesize it or fall back to the system font, and on Android a bare family name loses its weight. `constants/fonts.ts` and `constants/fonts.android.ts` must keep the same keys. `ThemedText` handles this — its `weight` prop maps to a face:
+**Web uses Google Sans Flex Rounded too, and must.** SF Pro is licensed by Apple for app UI on Apple platforms; converting it to woff2 and serving it from our own domain is webfont embedding, which that license does not grant. The Android faces are SIL OFL (`OFL.txt` sits beside them, no Reserved Font Name), so `assets/fonts/marketing/` carries woff2 conversions of the same four weights plus the license text. Regenerate them from the Android TTFs with fontTools (`f.flavor = 'woff2'`). Do not reintroduce an SF Pro webfont.
+
+A face is a `fonts.<name>` object from `@/constants/theme` (`regular`, `medium`, `semibold`, `bold`, `heavy`), spread into a style. On iOS and web it is a single-face `fontFamily` with no weight. On Android it is the family plus a `fontWeight`. Never set a bare `fontWeight` or `fontFamily` string: on iOS a mismatched weight makes the system synthesize it or fall back to the system font, and on Android a bare family name loses its weight. `constants/fonts.ts`, `constants/fonts.android.ts`, and `constants/fonts.web.ts` must keep the same keys. `ThemedText` handles this — its `weight` prop maps to a face:
 
 ```tsx
 <ThemedText variant="footnote" weight="bold" tone="secondary">…</ThemedText>
@@ -80,10 +82,10 @@ A web-only screen may deep-import a single icon (`@hugeicons/core-free-icons/Mic
 Do NOT guess icon names — many have numeric suffixes (`Mic01Icon`, `Mic02Icon`, `MicIcon` all exist). Look them up locally; every icon is a file in the installed package:
 
 ```bash
-ls node_modules/@hugeicons/core-free-icons/dist/types | grep -i <keyword>
+ls node_modules/@hugeicons/core-free-icons/dist/esm | grep -i <keyword>
 ```
 
-Example: `ls node_modules/@hugeicons/core-free-icons/dist/types | grep -i micro` → `Microphone01Icon.d.ts`, `Microphone02Icon.d.ts`, etc. Strip the `.d.ts` to get the import name. For visual browsing, search at https://hugeicons.com/icons (filter to the free set — pro-only names will not resolve).
+Example: `ls node_modules/@hugeicons/core-free-icons/dist/esm | grep -i micro` → `Microphone01Icon.js`, `Microphone02Icon.js`, etc. Strip the `.js` to get the import name. Note this is `dist/esm`, not `dist/types`: unlike the pro packages, the free set ships only four declaration files, so `dist/types` lists nothing useful and per-icon deep imports are typed by `types/hugeicons-free-icons.d.ts` instead. For visual browsing, search at https://hugeicons.com/icons (filter to the free set — pro-only names will not resolve).
 
 # Convex backend
 

@@ -54,7 +54,8 @@ scores the session, and turns the result into a concrete next step.
 - Expo Router API routes, Vercel AI Gateway, and AI SDK 7 for generated features
 - RevenueCat for Clarity Pro purchases and subscription state
 - EAS Observe for startup, navigation, practice, auth, and error telemetry
-- SF Pro Rounded, Hugeicons, Reanimated, and Expo Glass Effect for the UI
+- SF Pro Rounded (iOS), Google Sans Flex Rounded (Android and web), Hugeicons,
+  Reanimated, and Expo Glass Effect for the UI
 
 ## Run locally
 
