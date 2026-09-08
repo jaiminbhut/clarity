@@ -18,7 +18,7 @@ A human reviews and merges; you never merge.
 - `ISSUE_NUMBER` env var: the issue to reproduce and fix.
 - `EXPO_TOKEN` is set; eas-cli picks it up automatically. Always run eas-cli
   as `npx --yes eas-cli@latest`, always with `--non-interactive`.
-- App bundle id on the simulator build: `com.schroedernathan.clarityapp.preview`
+- App bundle id on the simulator build: `com.devtownhall.speakwell.preview`
   (shows as "Clarity (Preview)").
 - The `simulator` build profile uses the EAS `development` environment while
   keeping the preview app id. It has a Clerk development test user, scripted
@@ -123,9 +123,9 @@ One session is: start → install → drive → stop.
   instead: `curl -sL -o app-archive "<applicationArchiveUrl>"`, extract it
   (`tar -xzf` or `unzip` depending on file type), find the `*.app`
   directory, and
-  `npx --yes eas-cli@latest simulator:exec npx agent-device@latest install com.schroedernathan.clarityapp.preview "<path-to-.app>" --platform ios`.
+  `npx --yes eas-cli@latest simulator:exec npx agent-device@latest install com.devtownhall.speakwell.preview "<path-to-.app>" --platform ios`.
 - Drive with `npx --yes eas-cli@latest simulator:exec npx agent-device@latest <verb>`:
-  - `open com.schroedernathan.clarityapp.preview --platform ios`
+  - `open com.devtownhall.speakwell.preview --platform ios`
   - `snapshot -i` — accessibility tree with `@e1`-style refs. Run this
     before EVERY interaction; never guess what is on screen.
   - `press @eN` — tap (the verb is `press`, not `tap`)

@@ -4,9 +4,7 @@ import { ConfigContext, ExpoConfig } from 'expo/config';
 // variant, so `development`, `preview`, and `production` builds install side by
 // side. The variant comes from APP_VARIANT, stored in the EAS environments and
 // pulled locally into .env.local by `eas env:pull`.
-// `com.schroedernathan.clarity` is permanently unregistrable on this Apple team
-// (reserved by a deleted ASC record / foreign team) — hence the `app` suffix.
-const BUNDLE_ID = 'com.schroedernathan.clarityapp';
+const BUNDLE_ID = 'com.devtownhall.speakwell';
 
 function getBundleId() {
   switch (process.env.APP_VARIANT) {

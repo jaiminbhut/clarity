@@ -38,7 +38,7 @@ API errors you could not work around).
   `--non-interactive`). `EXPO_TOKEN` is set; the App Store Connect API key
   comes from the EAS credentials service via the `production` submit
   profile. `APP_VARIANT=production` is set by the workflow so the bundle
-  id resolves to `com.schroedernathan.clarityapp`.
+  id resolves to `com.devtownhall.speakwell`.
   - List recent screenshot feedback (page with `--offset`):
     `npx --yes eas-cli@latest testflight:feedback --json --limit 50 --non-interactive`
   - Fetch one submission (works for crashes too):

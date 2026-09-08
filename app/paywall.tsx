@@ -33,7 +33,7 @@ const PRO_GOLD = '#FFB000';
 
 /** Apple's standard EULA, which covers auto-renewing subscriptions. */
 const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-const PRIVACY_URL = 'https://clarityspeech.app/privacy';
+const PRIVACY_URL = 'https://devtownhall.com/speakwell/privacy';
 
 /** Plan cards visible at once: two whole ones plus a slice of the third, so the
  * row reads as scrollable without needing a scrollbar. */

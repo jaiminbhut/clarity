@@ -31,7 +31,7 @@ const SECTIONS: readonly LegalSection[] = [
   {
     heading: 'Delete my account',
     paragraphs: [
-      'Open Settings > Account > Delete account. This removes your account and all stored data and cannot be undone. See the Privacy Policy at clarityspeech.app/privacy for what is stored.',
+      'Open Settings > Account > Delete account. This removes your account and all stored data and cannot be undone. See the Privacy Policy at devtownhall.com/speakwell/privacy for what is stored.',
     ],
   },
 ];
