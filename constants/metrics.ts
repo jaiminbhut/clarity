@@ -18,7 +18,7 @@ import {
   DashboardSpeed01Icon,
   MaskTheater01Icon,
   Target01Icon,
-} from '@hugeicons-pro/core-stroke-rounded';
+} from '@hugeicons/core-free-icons';
 
 import type { SkillKey } from '@/types/history';
 

@@ -52,8 +52,9 @@ the same kind of thing, so the codebase stays uniform and predictable.
   session history. With no data, siblings render `EmptyStateCard` or hide the
   section entirely; a fabricated placeholder value is a finding.
 - **Typography and icons.** Weights via `constants/fonts.ts` constants (SF Pro
-  Rounded); icons via `HugeiconsIcon` with `@hugeicons-pro` packages, stroke
-  variant by default and solid for active/selected states.
+  Rounded); icons via `HugeiconsIcon` with the `@hugeicons/core-free-icons`
+  package, which is stroke-only — emphasis via `color`/`strokeWidth`, not a
+  solid variant.
 - **Copy style.** User-facing strings contain no em dashes; siblings rephrase
   with a period, comma, colon, or parentheses.
 

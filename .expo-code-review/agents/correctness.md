@@ -26,7 +26,7 @@ flag them when the diff introduces one:
   from `constants/fonts.ts` (`fonts.regular` … `fonts.heavy`). A `fontWeight`
   style on text makes iOS synthesize or fall back to the system font.
 - **Icons.** Only `HugeiconsIcon` from `@hugeicons/react-native` with icons from
-  the `@hugeicons-pro/core-stroke-rounded` / `core-solid-rounded` packages. An
+  the `@hugeicons/core-free-icons` package. An
   icon import must correspond to a real file in the package's `dist/types`;
   names with numeric suffixes are easy to guess wrong. No emoji or other icon
   libraries as UI glyphs.

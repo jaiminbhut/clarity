@@ -1,4 +1,4 @@
-import { AudioLinesIcon, Chart02Icon, Home07Icon } from '@hugeicons-pro/core-solid-rounded';
+import { AudioLinesIcon, Chart02Icon, Home07Icon } from '@hugeicons/core-free-icons';
 import { useRouter } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
 import { useColorScheme } from 'react-native';

@@ -1,5 +1,4 @@
-import { PauseIcon, PlayIcon, StopIcon } from '@hugeicons-pro/core-solid-rounded';
-import { Rotate01Icon } from '@hugeicons-pro/core-stroke-rounded';
+import { PauseIcon, PlayIcon, Rotate01Icon, StopIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';

@@ -1,4 +1,4 @@
-import { Mic02Icon } from '@hugeicons-pro/core-solid-rounded';
+import { Mic02Icon } from '@hugeicons/core-free-icons';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {

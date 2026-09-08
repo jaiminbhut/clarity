@@ -1,4 +1,4 @@
-import { MicOff01Icon } from '@hugeicons-pro/core-stroke-rounded';
+import { MicOff01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { StyleSheet, View } from 'react-native';
 

@@ -1,4 +1,4 @@
-import { PlayIcon, VolumeHighIcon } from '@hugeicons-pro/core-solid-rounded';
+import { PlayIcon, VolumeHighIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { Fragment } from 'react';

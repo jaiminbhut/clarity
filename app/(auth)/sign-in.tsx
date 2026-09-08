@@ -1,4 +1,4 @@
-import { AppleIcon, GoogleIcon } from '@hugeicons-pro/core-solid-rounded';
+import { AppleIcon, GoogleIcon } from '@hugeicons/core-free-icons';
 import { useSignIn } from '@clerk/expo';
 import { useSignInWithApple } from '@clerk/expo/apple';
 import { useSignInWithGoogle } from '@clerk/expo/google';

@@ -1,4 +1,4 @@
-import { Cancel01Icon } from '@hugeicons-pro/core-stroke-rounded';
+import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Stack } from 'expo-router';
 import { Platform, Pressable, StyleSheet } from 'react-native';

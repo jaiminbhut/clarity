@@ -1,4 +1,4 @@
-import { Cancel01Icon, Mic01Icon, VolumeHighIcon } from '@hugeicons-pro/core-stroke-rounded';
+import { Cancel01Icon, Mic01Icon, VolumeHighIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';

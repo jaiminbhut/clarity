@@ -1,4 +1,4 @@
-import { CheckmarkCircle02Icon } from '@hugeicons-pro/core-solid-rounded';
+import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react-native';
 import { StyleSheet, View } from 'react-native';
 

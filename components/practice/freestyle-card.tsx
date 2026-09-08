@@ -1,5 +1,4 @@
-import { Mic02Icon } from '@hugeicons-pro/core-solid-rounded';
-import { ShuffleIcon } from '@hugeicons-pro/core-stroke-rounded';
+import { Mic02Icon, ShuffleIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';

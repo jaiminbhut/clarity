@@ -5,7 +5,7 @@ import {
   FireIcon,
   Mic01Icon,
   StarIcon,
-} from '@hugeicons-pro/core-stroke-rounded';
+} from '@hugeicons/core-free-icons';
 import { GlassContainer } from 'expo-glass-effect';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';

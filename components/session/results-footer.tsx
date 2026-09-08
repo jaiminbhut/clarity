@@ -1,4 +1,4 @@
-import { Rotate01Icon, Tick02Icon } from '@hugeicons-pro/core-stroke-rounded';
+import { Rotate01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Pressable, StyleSheet, View } from 'react-native';

@@ -52,12 +52,13 @@ A face is a `fonts.<name>` object from `@/constants/theme` (`regular`, `medium`,
 
 Reach for `fonts` directly only where `ThemedText` can't go: a `TextInput` or `Animated.Text` (spread the face), or a prop that takes only a family string (pass `fonts.<name>.fontFamily`, and accept that Android renders it at the regular weight).
 
-# Icons: Hugeicons Pro
+# Icons: Hugeicons (free)
 
-This project uses Hugeicons Pro (docs: https://hugeicons.com/docs/integrations/react-native/pro). Two style packages are installed:
+This project uses the free Hugeicons set (docs: https://hugeicons.com/docs/integrations/react-native/free). One package holds all icon data:
 
-- `@hugeicons-pro/core-stroke-rounded` — default for most UI
-- `@hugeicons-pro/core-solid-rounded` — filled variant (active/selected states)
+- `@hugeicons/core-free-icons` — MIT, public npm, no auth token required
+
+The free set ships **stroke-rounded only**; there is no solid/filled variant. Emphasis comes from `color` and `strokeWidth`, not from swapping to a filled icon.
 
 ## Usage
 
@@ -65,23 +66,24 @@ Render icons with the `HugeiconsIcon` component from `@hugeicons/react-native`. 
 
 ```tsx
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Mic01Icon } from '@hugeicons-pro/core-stroke-rounded';
-import { Mic01Icon as Mic01IconSolid } from '@hugeicons-pro/core-solid-rounded';
+import { Mic01Icon } from '@hugeicons/core-free-icons';
 
 <HugeiconsIcon icon={Mic01Icon} size={24} color="#000" strokeWidth={1.5} />
 ```
 
-Props: `icon`, `size` (default 24), `color`, `strokeWidth` (stroke styles only, default 1.5), plus `altIcon`/`showAlt` for toggling between two icons (e.g. stroke ↔ solid). Icon names are the same across style packages — alias imports (`as XIconSolid`) when mixing both.
+Props: `icon`, `size` (default 24), `color`, `strokeWidth` (default 1.5), plus `altIcon`/`showAlt` for toggling between two icons.
+
+A web-only screen may deep-import a single icon (`@hugeicons/core-free-icons/Mic01Icon`, a default export) to keep the marketing bundle small; app code imports from the package root.
 
 ## Looking up icon names
 
 Do NOT guess icon names — many have numeric suffixes (`Mic01Icon`, `Mic02Icon`, `MicIcon` all exist). Look them up locally; every icon is a file in the installed package:
 
 ```bash
-ls node_modules/@hugeicons-pro/core-stroke-rounded/dist/types | grep -i <keyword>
+ls node_modules/@hugeicons/core-free-icons/dist/types | grep -i <keyword>
 ```
 
-Example: `ls node_modules/@hugeicons-pro/core-stroke-rounded/dist/types | grep -i micro` → `Microphone01Icon.d.ts`, `Microphone02Icon.d.ts`, etc. Strip the `.d.ts` to get the import name. For visual browsing, search at https://hugeicons.com/icons.
+Example: `ls node_modules/@hugeicons/core-free-icons/dist/types | grep -i micro` → `Microphone01Icon.d.ts`, `Microphone02Icon.d.ts`, etc. Strip the `.d.ts` to get the import name. For visual browsing, search at https://hugeicons.com/icons (filter to the free set — pro-only names will not resolve).
 
 # Convex backend
 

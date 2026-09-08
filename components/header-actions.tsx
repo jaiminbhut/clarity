@@ -1,4 +1,4 @@
-import { Crown02Icon, FireIcon, Settings01Icon } from '@hugeicons-pro/core-solid-rounded';
+import { Crown02Icon, FireIcon, Settings01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassContainer, GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';

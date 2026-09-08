@@ -54,7 +54,7 @@ scores the session, and turns the result into a concrete next step.
 - Expo Router API routes, Vercel AI Gateway, and AI SDK 7 for generated features
 - RevenueCat for Clarity Pro purchases and subscription state
 - EAS Observe for startup, navigation, practice, auth, and error telemetry
-- SF Pro Rounded, Hugeicons Pro, Reanimated, and Expo Glass Effect for the UI
+- SF Pro Rounded, Hugeicons, Reanimated, and Expo Glass Effect for the UI
 
 ## Run locally
 
@@ -65,18 +65,18 @@ used by speech recognition, MMKV, and RevenueCat.
 
 - [Bun](https://bun.sh/) and the native toolchain for the platform you plan to
   run, either Xcode for iOS or Android Studio for Android
-- A Hugeicons Pro token for the private icon packages
 - Matching Clerk and Convex development projects
 - A physical device if you need to test microphone and speech behavior
 
 ### Install and configure
 
-Create the ignored local environment file first. Bun reads it during dependency
-installation, including the `HUGEICONS_TOKEN` referenced by `.npmrc`.
+Create the ignored local environment file first. Bun reads it when starting the
+app. Every dependency comes from the public npm registry, so installing needs no
+credentials.
 
 ```bash
 cp .env.example .env.local
-# Fill in HUGEICONS_TOKEN and the required development values.
+# Fill in the required development values.
 bun install --frozen-lockfile
 ```
 
@@ -111,7 +111,6 @@ EAS. These are the groups that matter during setup:
 | --- | --- | --- |
 | App auth and sync | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `EXPO_PUBLIC_CONVEX_URL` | Required for the app to start and authenticate |
 | Convex auth | `CLERK_FRONTEND_API_URL` | Required on each Convex deployment; set with `convex env set` |
-| Private packages | `HUGEICONS_TOKEN` | Required when installing dependencies |
 | Native Google sign-in | `EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID`, `EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME` | Required for configured native Google sign-in; iOS values vary by app variant |
 | Generated features | `AI_GATEWAY_API_KEY` | Enables coaching, generated word-practice passages, and model pronunciation audio |
 | Pronunciation assessment | `EXPO_PUBLIC_AZURE_SPEECH_KEY`, `EXPO_PUBLIC_AZURE_SPEECH_REGION` | Optional; local alignment supplies fallback scoring |

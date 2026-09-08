@@ -1,4 +1,4 @@
-import { PauseIcon, PlayIcon } from '@hugeicons-pro/core-solid-rounded';
+import { PauseIcon, PlayIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';

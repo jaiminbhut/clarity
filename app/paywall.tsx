@@ -1,5 +1,4 @@
-import { Tick02Icon } from '@hugeicons-pro/core-stroke-rounded';
-import { CheckmarkCircle02Icon, Crown02Icon } from '@hugeicons-pro/core-solid-rounded';
+import { CheckmarkCircle02Icon, Crown02Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';

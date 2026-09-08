@@ -1,4 +1,4 @@
-import { PlusSignIcon } from '@hugeicons-pro/core-stroke-rounded';
+import { PlusSignIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, View } from 'react-native';

@@ -1,4 +1,4 @@
-import { ArrowLeft01Icon } from '@hugeicons-pro/core-stroke-rounded';
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { router, useSegments } from 'expo-router';

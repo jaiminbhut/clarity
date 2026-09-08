@@ -1,5 +1,4 @@
-import { Mic01Icon, Shield01Icon, VoiceIcon } from '@hugeicons-pro/core-stroke-rounded';
-import { Tick02Icon } from '@hugeicons-pro/core-stroke-rounded';
+import { Mic01Icon, Shield01Icon, Tick02Icon, VoiceIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';

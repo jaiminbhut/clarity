@@ -1,6 +1,6 @@
 import { useClerk, useUser } from '@clerk/expo';
 import { useMutation } from 'convex/react';
-import { CheckmarkCircle02Icon } from '@hugeicons-pro/core-solid-rounded';
+import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { Observe } from 'expo-observe';

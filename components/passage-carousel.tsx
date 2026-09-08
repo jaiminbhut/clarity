@@ -1,4 +1,4 @@
-import { PlayIcon } from '@hugeicons-pro/core-solid-rounded';
+import { PlayIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';

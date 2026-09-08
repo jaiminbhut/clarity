@@ -4,7 +4,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AnalyticsUpIcon } from '@hugeicons-pro/core-stroke-rounded';
+import { AnalyticsUpIcon } from '@hugeicons/core-free-icons';
 import { useMemo, useState } from 'react';
 
 import { DailyGoalCard } from '@/components/daily-goal-card';

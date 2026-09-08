@@ -1,4 +1,4 @@
-import { Book02Icon } from '@hugeicons-pro/core-solid-rounded';
+import { Book02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
