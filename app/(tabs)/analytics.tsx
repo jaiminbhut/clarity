@@ -1,3 +1,6 @@
+import { useProAccess } from '@/hooks/use-pro-access';
+import { router } from 'expo-router';
+import { usePaywall } from '@/hooks/use-paywall';
 import {
   AnalyticsUpIcon,
   CheckmarkBadge01Icon,
@@ -7,7 +10,7 @@ import {
   StarIcon,
 } from '@hugeicons/core-free-icons';
 import { GlassContainer } from 'expo-glass-effect';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +24,7 @@ import { HeaderActions } from '@/components/header-actions';
 import { CounterCard, SkillCard } from '@/components/metrics';
 import { SegmentedControl } from '@/components/segmented-control';
 import { IntroReveal } from '@/components/splash';
-import { SectionHeader, ThemedText } from '@/components/ui';
+import { PrimaryButton, SectionHeader, ThemedText } from '@/components/ui';
 import { spacing, TAB_BAR_SCROLL_INSET } from '@/constants/theme';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSessionRecords, useWords } from '@/hooks/use-session-history';
@@ -54,6 +57,13 @@ export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
 
   const [range, setRange] = useState(0);
+  const pro = useProAccess();
+  const { requirePro } = usePaywall();
+  useEffect(() => { if (!pro.isPro) setRange(0); }, [pro.isPro]);
+  const changeRange = (value: number) => {
+    if (value === 0 || pro.isPro) setRange(value);
+    else void requirePro(() => setRange(value), 'analytics');
+  };
   const records = useSessionRecords();
   const now = useNow();
 
@@ -157,8 +167,9 @@ export default function AnalyticsScreen() {
         </IntroReveal>
       </View>
       <IntroReveal order={1} style={styles.control}>
-        <SegmentedControl segments={RANGES} selectedIndex={range} onChange={setRange} />
+        <SegmentedControl segments={RANGES} selectedIndex={range} onChange={changeRange} />
       </IntroReveal>
+      <PrimaryButton title="Saved feedback" size="md" style={styles.sectionCard} onPress={() => router.push('/feedback')} />
     </>
   );
 
@@ -174,7 +185,7 @@ export default function AnalyticsScreen() {
     },
   } as const;
 
-  if (summary.empty) {
+  if (summary.empty && records.length === 0) {
     return (
       <Animated.ScrollView {...scroll}>
         {header}

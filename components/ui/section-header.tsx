@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import { ThemedText } from '@/components/ui';
+import { ThemedText } from './themed-text';
 import { spacing } from '@/constants/theme';
 
 /**

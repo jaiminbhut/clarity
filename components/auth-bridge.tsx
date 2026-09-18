@@ -1,5 +1,6 @@
 import { useAuth } from '@clerk/expo';
 import { useEffect } from 'react';
+import { setPremiumIdentity, refreshProAccess } from '@/services/pro-access';
 
 import {
   getIdentifiedPurchaserId,
@@ -27,10 +28,18 @@ import { forgetPurchaser, identifyPurchaser } from '@/services/purchases';
  * already the identified one.
  */
 export function AuthBridge() {
-  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken, sessionClaims } = useAuth();
 
   useEffect(() => {
     if (!isLoaded) return;
+    setPremiumIdentity(isSignedIn && userId ? userId : null,
+      isSignedIn ? () => getToken(sessionClaims?.aud === 'convex' ? {} : { template: 'convex' }) : null);
+    if (isSignedIn) void refreshProAccess().catch(() => {});
+  }, [isLoaded, isSignedIn, userId, getToken, sessionClaims?.aud]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    let cancelled = false;
     const current = isSignedIn && userId ? userId : null;
     const previous = getLastSignedInUserId();
     setLastSignedInUserId(current);
@@ -45,7 +54,7 @@ export function AuthBridge() {
           .then((customerInfo) => {
             // null means purchases are unavailable in this build, so nothing
             // was linked and the marker stays clear for the next attempt.
-            if (customerInfo) setIdentifiedPurchaserId(current);
+            if (!cancelled && customerInfo && getLastSignedInUserId() === current) setIdentifiedPurchaserId(current);
           })
           .catch((error) => console.warn('[auth] identifyPurchaser failed', error));
       }
@@ -55,6 +64,7 @@ export function AuthBridge() {
       setIdentifiedPurchaserId(null);
       forgetPurchaser().catch((error) => console.warn('[auth] forgetPurchaser failed', error));
     }
+    return () => { cancelled = true; };
   }, [isLoaded, isSignedIn, userId]);
 
   return null;

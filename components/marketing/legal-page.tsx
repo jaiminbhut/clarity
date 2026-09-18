@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/ui';
 import { marketing, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import { ClarityMark } from './clarity-mark';
+import { ClarityMark } from '@/components/ui/clarity-mark';
 
 export type LegalSection = {
   heading: string;
@@ -48,7 +48,7 @@ export function LegalPage({ title, metaDescription, updated, intro, sections }: 
         <View style={{ width: pageWidth, gap: desktop ? marketing.gap.section : marketing.gap.sectionMobile }}>
           <Link href="/" asChild>
             <Pressable accessibilityRole="link" style={styles.wordmark}>
-              <ClarityMark size={marketing.size.navMark} />
+              <ClarityMark tone="marketing" size={marketing.size.navMark} />
               <ThemedText variant="marketingWordmark" tone="marketingPrimary">
                 clarity
               </ThemedText>

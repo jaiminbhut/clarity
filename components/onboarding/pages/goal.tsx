@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -6,13 +5,11 @@ import { ChoiceRow, OnboardingScreen } from '@/components/onboarding';
 import { OptionCard } from '@/components/ui';
 import { GOAL_OPTIONS } from '@/constants/goals';
 import { spacing } from '@/constants/theme';
-import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSetting } from '@/hooks/use-settings';
 
 /** Step 3: the daily goal the Home ring fills against. Preselected to the value
  * the app shipped with, so tapping straight through changes nothing. */
-export default function GoalStep() {
-  useMarkInteractive();
+export default function GoalStep({ onContinue }: { onContinue: () => void }) {
   const [goalMinutes, setGoalMinutes] = useSetting('goalMinutes');
   const [writeFailed, setWriteFailed] = useState(false);
 
@@ -25,7 +22,7 @@ export default function GoalStep() {
         // Confirms the preselected goal too. See the accent step for why an
         // unchanged value still has to be written.
         setWriteFailed(!setGoalMinutes(goalMinutes));
-        router.push('/(onboarding)/priority');
+        onContinue();
       }}
       note={writeFailed ? 'That choice could not be saved. Your device may be out of storage.' : 'You can change your daily goal in Settings.'}>
       <View style={styles.list}>

@@ -136,7 +136,7 @@
     },
     "extra": {
       "router": {
-        "origin": "https://exponathan-clarity.expo.app"
+        "origin": "https://clarityapp.expo.app"
       },
       "eas": {
         "projectId": "c062263d-cdf6-4ddc-9b07-4178349c3006"

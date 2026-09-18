@@ -228,6 +228,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
   // --- hydration -------------------------------------------------------------
 
   function hydrate(): readonly SessionRecord[] {
+    recoverAssessmentWrite();
     if (records) return records;
     const started = now();
     const deferred: (() => void)[] = [];
@@ -538,6 +539,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
 
     appendToSnapshot(record);
     if (input.words) {
+      journalWords(record.id, input.words, record.completedAt, record.endedReason);
       recordWords(input.words, record.completedAt, record.endedReason);
       writeDeltas(record.id, input.words);
     }
@@ -586,8 +588,10 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
     words: readonly { word: string; status: string }[],
     at: number,
     endedReason: SessionEndedReason,
+    recordId?: string,
   ) {
     hydrate();
+    if (recordId) journalWords(recordId, words, at, endedReason);
     recordWords(words, at, endedReason);
     notify();
   }
@@ -621,6 +625,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
         key.startsWith(KEY.quarantine) ||
         key.startsWith(KEY.word) ||
         key.startsWith(KEY.delta) ||
+        key.startsWith('assessment/') ||
         key === META_KEY.seq ||
         key === META_KEY.inflight ||
         // Cleared too, so the legacy file is re-imported on the next hydrate.
@@ -654,6 +659,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
         key.startsWith(KEY.quarantine) ||
         key.startsWith(KEY.word) ||
         key.startsWith(KEY.delta) ||
+        key.startsWith('assessment/') ||
         key === META_KEY.seq ||
         key === META_KEY.inflight
       ) {
@@ -704,6 +710,7 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
     words: readonly { word: string; status: string }[],
     at: number,
     endedReason: SessionEndedReason,
+    strict = false,
   ) {
     if (endedReason !== 'completed' && endedReason !== 'stopped') return;
     const map = hydrateWords();
@@ -743,14 +750,99 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
     for (const key of touched) {
       const stat = map.get(key)!;
       try {
-        kv.set(key, JSON.stringify(stat));
+        const value = JSON.stringify(stat);
+        kv.set(key, value);
+        if (strict && kv.getString(key) !== value) throw new Error('Word write verification failed');
       } catch (error) {
+        if (strict) throw error;
         warn(`[history] failed to persist word stat ${key}`, error);
       }
     }
     // New Map identity so consumers memoized on it re-derive.
     wordStats = new Map(map);
     wordStatsList = null;
+  }
+
+  type WordEvent = { id: string; words: { word: string; status: string }[]; at: number; endedReason: SessionEndedReason };
+  function journalWords(id: string, words: readonly { word: string; status: string }[], at: number, endedReason: SessionEndedReason) {
+    if (!kv.contains('assessment/word-baseline')) {
+      kv.set('assessment/word-baseline', JSON.stringify([...hydrateWords().values()]));
+    }
+    const key = `assessment/words/${id}`;
+    const value = JSON.stringify({ id, words: words.slice(0, MAX_WORD_DELTAS), at, endedReason });
+    kv.set(key, value);
+    if (kv.getString(key) !== value) throw new Error('Word journal verification failed');
+  }
+  function rebuildJournalWords() {
+    const raw = kv.getString('assessment/word-baseline');
+    if (!raw) return;
+    const baseline: WordStat[] = JSON.parse(raw);
+    const events: WordEvent[] = kv.getAllKeys().filter(k => k.startsWith('assessment/words/'))
+      .map(k => JSON.parse(kv.getString(k)!)).sort((a: WordEvent, b: WordEvent) => a.at - b.at || a.id.localeCompare(b.id));
+    for (const key of kv.getAllKeys()) if (key.startsWith(KEY.word)) kv.remove(key);
+    wordStats = new Map(baseline.map(stat => [wordKey(stat.word), { ...stat }]));
+    for (const [key, stat] of wordStats) kv.set(key, JSON.stringify(stat));
+    wordStatsList = null;
+    for (const event of events) recordWords(event.words, event.at, event.endedReason, true);
+  }
+  // A durable undo record makes the multi-key MMKV replacement recoverable if
+  // a disk write fails or the process exits halfway through rebuilding words.
+  const assessmentUndoKey = 'assessment/pending-write';
+  function recoverAssessmentWrite() {
+    const raw = kv.getString(assessmentUndoKey);
+    if (!raw) return;
+    const undo: { keys: Record<string, string | null> } = JSON.parse(raw);
+    for (const key of kv.getAllKeys()) if (key.startsWith(KEY.word) && !(key in undo.keys)) kv.remove(key);
+    for (const [key, value] of Object.entries(undo.keys)) {
+      if (value === null) kv.remove(key);
+      else {
+        kv.set(key, value);
+        if (kv.getString(key) !== value) throw new Error('Assessment recovery could not be saved');
+      }
+    }
+    kv.remove(assessmentUndoKey);
+    records = null;
+    wordStats = null;
+    wordStatsList = null;
+  }
+  /** Grade replacement preserves the base append log and never adds practice time. */
+  function applyAssessment(recordId: string, input: RecordSessionInput): boolean {
+    const old = hydrate().find(record => record.id === recordId);
+    if (!old || !kv.contains(`assessment/words/${recordId}`)) return false;
+    const next: SessionRecord = { ...old, accuracy: input.accuracy, fluency: input.fluency,
+      completeness: input.completeness, intonation: input.intonation, paceWpm: input.paceWpm,
+      targetWpm: input.targetWpm, fillerCount: input.fillerCount, spokenWords: input.spokenWords,
+      pauseCount: input.pauseCount, longestPauseMs: input.longestPauseMs, source: input.source,
+      wordCounts: input.wordCounts, challengingWords: input.challengingWords };
+    // Reject malformed imports without ever losing the saved basic attempt.
+    if (!parseRecord(next, { fallbackSeq: old.seq }).ok) return false;
+    const json = JSON.stringify(next);
+    if (JSON.stringify(old) === json) return true;
+    try {
+      const keys = [recordId, `assessment/base/${recordId}`, `assessment/words/${recordId}`,
+        ...kv.getAllKeys().filter(key => key.startsWith(KEY.word))];
+      const undo = JSON.stringify({ keys: Object.fromEntries(keys.map(key => [key, kv.getString(key) ?? null])) });
+      kv.set(assessmentUndoKey, undo);
+      if (kv.getString(assessmentUndoKey) !== undo) throw new Error('Undo write verification failed');
+      if (!kv.contains(`assessment/base/${recordId}`)) kv.set(`assessment/base/${recordId}`, JSON.stringify(old));
+      kv.set(recordId, json);
+      if (kv.getString(recordId) !== json) throw new Error('verify mismatch');
+      journalWords(recordId, input.words ?? [], old.completedAt, old.endedReason);
+      rebuildJournalWords();
+      kv.remove(assessmentUndoKey);
+      records = (records ?? []).map(record => record.id === recordId ? next : record);
+      notify();
+      return true;
+    } catch {
+      try { recoverAssessmentWrite(); } catch (error) { warn('[history] assessment recovery pending', error); }
+      return false;
+    }
+  }
+  function getBaseRecords() {
+    return hydrate().map(record => {
+      const raw = kv.getString(`assessment/base/${record.id}`);
+      return raw ? JSON.parse(raw) as SessionRecord : record;
+    });
   }
 
   // --- in-flight checkpoint --------------------------------------------------
@@ -889,6 +981,8 @@ export function createHistoryStore(deps: HistoryStoreDeps) {
 
   return {
     getRecords: hydrate,
+    getBaseRecords,
+    applyAssessment,
     subscribe(listener: () => void): () => void {
       listeners.add(listener);
       return () => void listeners.delete(listener);

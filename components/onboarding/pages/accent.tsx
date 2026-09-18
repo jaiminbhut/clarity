@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -6,7 +5,6 @@ import { ChoiceRow, OnboardingScreen } from '@/components/onboarding';
 import { OptionCard } from '@/components/ui';
 import { ACCENTS, hasPhonemeDetail } from '@/constants/accents';
 import { spacing } from '@/constants/theme';
-import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSetting } from '@/hooks/use-settings';
 
 /**
@@ -15,8 +13,7 @@ import { useSetting } from '@/hooks/use-settings';
  * (`constants/accents.ts`). Asked before the first session so the first score
  * is a fair one.
  */
-export default function AccentStep() {
-  useMarkInteractive();
+export default function AccentStep({ onContinue }: { onContinue: () => void }) {
   const [accentLocale, setAccentLocale] = useSetting('accentLocale');
   const [writeFailed, setWriteFailed] = useState(false);
 
@@ -33,7 +30,7 @@ export default function AccentStep() {
         // (`lib/settings-store.ts`). A lost write still does not trap anyone
         // here; the note is for the tap path.
         setWriteFailed(!setAccentLocale(accentLocale));
-        router.push('/(onboarding)/goal');
+        onContinue();
       }}
       note={
         writeFailed

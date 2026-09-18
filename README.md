@@ -6,7 +6,7 @@ Clarity is a speech-practice app for iOS and Android. Read a passage, work
 through a one-minute drill, or speak off the cuff. Clarity follows along,
 scores the session, and turns the result into a concrete next step.
 
-[Website](https://exponathan-clarity.expo.app/) ·
+[Website](https://clarityapp.expo.app/) ·
 [Join the iOS beta](https://testflight.apple.com/join/CMRNm4w4)
 
 ## What Clarity does
@@ -84,7 +84,7 @@ Start the Convex watcher. Its first run links or creates a development deploymen
 and writes the deployment URL and identifier to `.env.local`.
 
 ```bash
-bun run convex
+bun run convex:dev
 ```
 
 Each Convex deployment also needs the Frontend API URL for the matching Clerk
@@ -94,7 +94,7 @@ instance. Set this on the backend, not in `.env.local`:
 bunx convex env set CLERK_FRONTEND_API_URL 'https://your-instance.clerk.accounts.dev'
 ```
 
-Leave `bun run convex` running, then build the native app in another terminal:
+Leave `bun run convex:dev` running, then build the native app in another terminal:
 
 ```bash
 bun run ios
@@ -143,7 +143,7 @@ transcription quality, Azure assessment, and recording playback.
 | `bun start` | Start the native Metro server |
 | `bun run ios` | Build and run the iOS app |
 | `bun run android` | Build and run the Android app |
-| `bun run convex` | Push Convex functions and watch the backend |
+| `bun run convex:dev` | Push Convex functions and watch the backend |
 | `bun run typecheck` | Type-check the app and Convex programs |
 | `bun run test` | Run the history, sync, stats, alignment, scoring, WAV, entitlement, and settings suites |
 | `bun run web` | Start the separate marketing-site route tree |

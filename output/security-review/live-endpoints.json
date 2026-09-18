@@ -1,0 +1,194 @@
+[
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "speech-assessment",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "speech-assessment",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "speech-coach",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "speech-coach",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "practice-passage",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "practice-passage",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pronounce",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pronounce",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pro/status",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pro/status",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pro/preview",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pro/preview",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pro/preview-release",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pro/preview-release",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pro/assessment-done",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://enduring-kangaroo-904.convex.site",
+    "path": "pro/assessment-done",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "speech-assessment",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "speech-assessment",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "speech-coach",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "speech-coach",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "practice-passage",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "practice-passage",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pronounce",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pronounce",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pro/status",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pro/status",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pro/preview",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pro/preview",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pro/preview-release",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pro/preview-release",
+    "authentication": "invalid",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pro/assessment-done",
+    "authentication": "missing",
+    "status": 401
+  },
+  {
+    "origin": "https://adorable-rat-131.convex.site",
+    "path": "pro/assessment-done",
+    "authentication": "invalid",
+    "status": 401
+  }
+]

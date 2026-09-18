@@ -358,12 +358,28 @@ export async function refreshCustomerInfo(): Promise<CustomerInfo | null> {
  * difference between a retry and an account left on the anonymous id.
  */
 export async function identifyPurchaser(appUserID: string): Promise<CustomerInfo | null> {
-  if (!isConfigured()) return null;
-  const { customerInfo } = await Purchases.logIn(appUserID);
-  return customerInfo;
+  return changeIdentity(async () => {
+    if (!isConfigured()) return null;
+    const { customerInfo } = await Purchases.logIn(appUserID);
+    return customerInfo;
+  });
 }
 
 export async function forgetPurchaser(): Promise<CustomerInfo | null> {
-  if (!isConfigured()) return null;
-  return Purchases.logOut();
+  return changeIdentity(async () => {
+    if (!isConfigured()) return null;
+    // Explicit sign-out and the auth boundary can both request cleanup. The
+    // SDK rejects logging out an anonymous identity, so make cleanup idempotent.
+    if (await Purchases.isAnonymous()) return null;
+    return Purchases.logOut();
+  });
+}
+
+// A slow logout must finish before a subsequent account's login. Otherwise its
+// completion can leave the SDK anonymous after the new login already succeeded.
+let identityChange: Promise<unknown> = Promise.resolve();
+function changeIdentity<T>(change: () => Promise<T>): Promise<T> {
+  const next = identityChange.then(change, change);
+  identityChange = next.catch(() => {});
+  return next;
 }

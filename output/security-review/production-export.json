@@ -1,0 +1,7 @@
+{
+  "platform": "ios",
+  "productionEnvironment": true,
+  "scanned": 36,
+  "secretMatches": [],
+  "exportPath": "/tmp/clarity-security-ios-export"
+}

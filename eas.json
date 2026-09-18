@@ -38,7 +38,8 @@
       "environment": "production",
       "env": {
         "APP_VARIANT": "production"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {

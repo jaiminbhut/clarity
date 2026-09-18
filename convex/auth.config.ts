@@ -8,9 +8,6 @@
  * prod at `https://clerk.clarityspeech.app`. Pointing prod at the dev URL fails
  * as a silent `Not authenticated` on every call, with no other symptom.
  */
-/** The Convex tsconfig carries no Node types; this is the one `process` read. */
-declare const process: { env: Record<string, string | undefined> };
-
 export default {
   providers: [
     {

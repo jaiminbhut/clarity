@@ -1,4 +1,5 @@
 import { ConfigContext, ExpoConfig } from 'expo/config';
+import { assertProductionEnvironment } from './lib/release-config';
 
 // app.json stays the base layer. This file overrides only what varies per app
 // variant, so `development`, `preview`, and `production` builds install side by
@@ -55,6 +56,7 @@ function getIosIcon() {
 }
 
 export default ({ config }: ConfigContext): ExpoConfig => {
+  assertProductionEnvironment(process.env);
   const iosIcon = getIosIcon();
   const baseScheme = typeof config.scheme === 'string' ? config.scheme : 'clarity';
   const easProjectId = (config.extra?.eas as { projectId?: unknown } | undefined)?.projectId;
@@ -75,7 +77,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: getName(config.name ?? 'Clarity'),
     scheme: getScheme(baseScheme),
     runtimeVersion: {
-      policy: 'appVersion',
+      // Automatic production OTA delivery requires a native compatibility
+      // boundary even when the app's marketing version stays the same.
+      // Existing preview/development builds retain their appVersion runtime.
+      policy: process.env.APP_VARIANT === 'production' ? 'fingerprint' : 'appVersion',
     },
     updates: {
       ...config.updates,

@@ -6,6 +6,8 @@ import {
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 
+import { audioProcessingFailed, recognitionFallback, scoringDegraded } from '@/services/observe-events';
+import { getAccentLocale } from '@/services/settings';
 import { countDiscourseMarkers, countFillers } from '@/lib/fillers';
 import { tokenizeTranscript } from '@/services/alignment';
 import { claimEngine, releaseEngine } from '@/services/recognition-owner';
@@ -302,6 +304,7 @@ export function useFreestyleSession(): FreestyleSession {
 
     if (event.error === 'language-not-supported' || event.error === 'service-not-allowed') {
       if (m.mode === 'on-device' && !m.retriedNetwork) {
+        recognitionFallback({ mode: 'freestyle', reason: event.error });
         m.retriedNetwork = true;
         m.mode = 'network';
         return; // the trailing `end` event performs the restart
@@ -321,6 +324,7 @@ export function useFreestyleSession(): FreestyleSession {
     if (m.status !== 'listening' || m.expectEnd) return;
     if (m.endedCount < m.startedCount) return;
     if (m.mode === 'on-device' && !m.retriedNetwork && m.lastTransientError) {
+      recognitionFallback({ mode: 'freestyle', reason: m.lastTransientError.code });
       m.retriedNetwork = true;
       m.mode = 'network';
       m.lastTransientError = null;
@@ -433,6 +437,7 @@ export function useFreestyleSession(): FreestyleSession {
       }
     } catch (e) {
       if (__DEV__) console.warn('[freestyle] audio processing failed:', e);
+      audioProcessingFailed({ mode: 'freestyle', segments: m.segmentUris.length });
       audioUri = null;
       waveform = null;
     }
@@ -569,6 +574,7 @@ export function useFreestyleSession(): FreestyleSession {
           finalResult = await finishProcessing();
         } catch (e) {
           if (__DEV__) console.warn('[freestyle] processing failed entirely:', e);
+          scoringDegraded({ mode: 'freestyle', reason: 'processing-failed', locale: getAccentLocale(), durationMs: Math.max(1, Math.round(m.accumulatedActiveMs)) });
           finalResult = buildFreestyleResult({
             transcript: m.finalParts.join(' '),
             paceWpm: 0,

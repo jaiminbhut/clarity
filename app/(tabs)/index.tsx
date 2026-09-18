@@ -1,3 +1,5 @@
+import { usePaywall } from '@/hooks/use-paywall';
+import { isUpgradeError } from '@/services/pro-access';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -47,6 +49,7 @@ export default function HomeScreen() {
   useMarkInteractive();
 
   const onScroll = useMinimizeOnScroll();
+  const { requirePro } = usePaywall();
   const insets = useSafeAreaInsets();
 
   const now = useNow();
@@ -83,8 +86,14 @@ export default function HomeScreen() {
     if (generatingPractice) return;
     setGeneratingPractice(true);
     try {
-      const passage = await generateWordPracticePassage(toMaster.map((w) => w.word));
-      router.push(`/session/${passage.id}`);
+      const generate = async () => {
+        const passage = await generateWordPracticePassage(toMaster.map((w) => w.word));
+        router.push(`/session/${passage.id}`);
+      };
+      try { await generate(); } catch (cause) {
+        if (isUpgradeError(cause)) await requirePro(generate, 'exercise');
+        else throw cause;
+      }
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
@@ -100,7 +109,10 @@ export default function HomeScreen() {
     if (speakingWord) return;
     setSpeakingWord(word);
     try {
-      await speakWord(word);
+      try { await speakWord(word); } catch (cause) {
+        if (isUpgradeError(cause)) await requirePro(() => speakWord(word), 'pronunciation');
+        else throw cause;
+      }
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(

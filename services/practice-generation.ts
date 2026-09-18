@@ -1,42 +1,28 @@
-/**
- * "Practice all" on the Home trouble-words card: asks the /api/practice-passage
- * route for a short passage that works every word in, then holds the result in
- * memory for the session route to resolve by id.
- *
- * Deliberately NOT persisted: this is throwaway drill content, not something
- * the user authored, so it stays out of their library. Session records
- * snapshot `contentTitle` at write time, so history survives the passage being
- * gone after a relaunch (the same contract as deleted custom passages).
- */
-
-// NOTE: uses the global fetch (Expo's WinterCG fetch on SDK 57+), which
-// resolves relative URLs against the dev server / hosting origin. `expo/fetch`
-// resolves them against file:/// and would 404 here.
-import { tokenizePassage } from '@/lib/passage-text';
+import { addPassage } from '@/services/user-passages';
+import { getPremiumIdentity, getPreviewContext, newOperationId, premiumHeaders, requestPremium } from '@/services/pro-access';
+/** Generated exercises are saved in the personal library for later practice. */
 import type { Passage } from '@/types/session';
 
 /** Matches the editor's "Slow" pace option: these are the user's hardest words. */
 const TARGET_WPM = 120;
 
-/** Same base/blob alpha-<1 convention as PASSAGES and user-passage artwork. */
-const ARTWORK: Passage['artwork'] = {
-  base: ['rgba(50,120,246,0.92)', 'rgba(40,70,190,0.85)'],
-  blob: ['rgba(140,220,255,0.9)', 'rgba(90,160,255,0.55)'],
-};
-
 let current: Passage | null = null;
+let currentOwner: string | null = null;
 
 /** Resolver for lib/passage-catalog.ts; only the latest generation is live. */
 export function getGeneratedPassage(id: string | undefined): Passage | undefined {
-  return current && current.id === id ? current : undefined;
+  return currentOwner === getPremiumIdentity() && current && current.id === id ? current : undefined;
 }
 
 export async function generateWordPracticePassage(
   words: readonly string[],
 ): Promise<Passage> {
-  const response = await fetch('/api/practice-passage', {
+  const owner = getPremiumIdentity();
+  const operationId = newOperationId();
+  const context = getPreviewContext() ?? { sessionKey: operationId };
+  const response = await requestPremium('/api/practice-passage', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...premiumHeaders(operationId, context) },
     body: JSON.stringify({ words }),
   });
 
@@ -63,16 +49,11 @@ export async function generateWordPracticePassage(
   }
 
   const { title, text } = payload as { title: string; text: string };
-  const wordCount = tokenizePassage(text).words.length;
-  const minutes = Math.max(1, Math.round(wordCount / TARGET_WPM));
+  if (owner !== getPremiumIdentity()) throw new Error('Your account changed. Please try again.');
+  // Earned exercises live in the existing personal library and sync like other passages.
+  current = addPassage({ title: title.trim(), text: text.trim(), targetWpm: TARGET_WPM });
+  currentOwner = owner;
+  if (!current) throw new Error('The exercise could not be saved. Please try again.');
 
-  current = {
-    id: `generated-${Date.now().toString(36)}`,
-    title: title.trim(),
-    text: text.trim(),
-    duration: `~${minutes} min${minutes > 1 ? 's' : ''}`,
-    artwork: ARTWORK,
-    targetWpm: TARGET_WPM,
-  };
   return current;
 }

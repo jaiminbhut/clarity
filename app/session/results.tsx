@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SkillCard } from '@/components/metrics';
-import { AiCoachingCard } from '@/components/session/ai-coaching-card';
+import { PremiumFeedback } from '@/components/session/premium-feedback';
 import { PlaybackPill } from '@/components/session/playback-pill';
 import { ResultsFooter } from '@/components/session/results-footer';
 import { ScoreGauge } from '@/components/session/score-gauge';
@@ -46,7 +46,7 @@ function dismissToHome() {
 }
 
 export default function ResultsScreen() {
-  const { result, recordId, bumpRetry } = useSessionContext();
+  const { result, recordId, bumpRetry, setResult } = useSessionContext();
 
   // Without a result the screen renders nothing and pops, so the score is on
   // screen only once `result` exists.
@@ -186,7 +186,7 @@ export default function ResultsScreen() {
         </View>
         <SkillCard skills={skills} captions={captions} deltas={deltas} />
         <View style={styles.coaching}>
-          <AiCoachingCard result={result} />
+          <PremiumFeedback result={result} recordId={recordId} onResult={setResult} />
         </View>
         <View style={styles.breakdown}>
           {result.mode === 'freestyle' ? (

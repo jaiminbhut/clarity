@@ -1,4 +1,6 @@
 import { Cancel01Icon, Mic01Icon, VolumeHighIcon } from '@hugeicons/core-free-icons';
+import { usePaywall } from '@/hooks/use-paywall';
+import { isUpgradeError } from '@/services/pro-access';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -158,7 +160,13 @@ export function WordDetail({ word, audioUri, onDismiss }: WordDetailProps) {
   const canHearOwn =
     audioUri != null && word.audioStartMs != null && word.audioEndMs != null;
 
-  const hearTarget = useCallback(() => speakWord(spoken), [spoken]);
+  const { requirePro } = usePaywall();
+  const hearTarget = useCallback(async () => {
+    try { await speakWord(spoken); } catch (cause) {
+      if (isUpgradeError(cause)) await requirePro(() => speakWord(spoken), 'pronunciation');
+      else throw cause;
+    }
+  }, [spoken, requirePro]);
   const hearOwn = useCallback(
     () => playOwnAttempt(audioUri!, word.audioStartMs!, word.audioEndMs!),
     [audioUri, word.audioStartMs, word.audioEndMs],

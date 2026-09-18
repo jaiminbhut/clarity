@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { AppState } from 'react-native';
 
 import { beginSession, checkpointSession, endSession } from '@/services/session-history';
-import type { PracticeStatus } from '@/types/session';
+import type { PracticeError, PracticeStatus } from '@/types/session';
+import type { PracticeAttempt } from '@/services/observe-events';
 import type { InflightSession } from '@/types/history';
 
 /** How often the live session's progress is written down. Cheap: one small key,
@@ -11,6 +12,9 @@ const CHECKPOINT_INTERVAL_MS = 5_000;
 
 export type SessionCheckpointArgs = {
   status: PracticeStatus;
+  error: PracticeError | null;
+  retryToken: number;
+  previewId?: string;
   elapsedMs: number;
   spokenWords: number;
   fillerCount: number;
@@ -20,6 +24,7 @@ export type SessionCheckpointArgs = {
 };
 
 export type SessionCheckpointHandle = {
+  readonly attempt: PracticeAttempt;
   /**
    * Clear the checkpoint. MUST be called once the attempt has been persisted (or
    * definitively discarded) — see the lifecycle note below.
@@ -52,6 +57,9 @@ export type SessionCheckpointHandle = {
  */
 export function useSessionCheckpoint({
   status,
+  error,
+  retryToken,
+  previewId,
   elapsedMs,
   spokenWords,
   fillerCount,
@@ -65,13 +73,16 @@ export function useSessionCheckpoint({
     latest.current = { status, elapsedMs, spokenWords, fillerCount, onBackground };
   }, [status, elapsedMs, spokenWords, fillerCount, onBackground]);
 
+  const attempt = useRef<PracticeAttempt | null>(null);
+  const previewIdRef = useRef(previewId);
   const metaRef = useRef(meta);
   useEffect(() => {
     metaRef.current = meta;
-  }, [meta]);
+    previewIdRef.current = previewId;
+  }, [meta, previewId]);
 
   useEffect(() => {
-    beginSession({ ...metaRef.current, elapsedMs: 0, spokenWords: 0, fillerCount: 0 });
+    attempt.current = beginSession({ ...metaRef.current, elapsedMs: 0, spokenWords: 0, fillerCount: 0 }, previewIdRef.current);
 
     const flush = () => {
       const { elapsedMs: ms, spokenWords: words, fillerCount: fillers } = latest.current;
@@ -100,11 +111,30 @@ export function useSessionCheckpoint({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const previousRetry = useRef(retryToken);
+  useEffect(() => {
+    if (previousRetry.current === retryToken) return;
+    previousRetry.current = retryToken;
+    attempt.current = beginSession({ ...metaRef.current, elapsedMs: 0, spokenWords: 0, fillerCount: 0 });
+  }, [retryToken]);
+
+  useEffect(() => {
+    if (status === 'error' && error) attempt.current?.fail(error.code);
+  }, [status, error]);
+
   return useMemo(
     () => ({
-      end: endSession,
-      begin: () =>
-        beginSession({ ...metaRef.current, elapsedMs: 0, spokenWords: 0, fillerCount: 0 }),
+      get attempt() {
+        if (!attempt.current) throw new Error('Practice checkpoint has not mounted');
+        return attempt.current;
+      },
+      end: () => {
+        attempt.current?.cancel();
+        endSession();
+      },
+      begin: () => {
+        attempt.current = beginSession({ ...metaRef.current, elapsedMs: 0, spokenWords: 0, fillerCount: 0 }, previewIdRef.current);
+      },
     }),
     [],
   );

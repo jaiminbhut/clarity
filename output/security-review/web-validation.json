@@ -1,0 +1,44 @@
+{
+  "deployment": "k46cqay8hf",
+  "routes": [
+    {
+      "route": "pronounce",
+      "auth": "missing",
+      "status": 401,
+      "body": "{\"code\":\"authentication_required\",\"error\":\"Sign in to use personal feedback.\"}"
+    },
+    {
+      "route": "pronounce",
+      "auth": "invalid",
+      "status": 401,
+      "body": "{\"code\":\"authentication_required\",\"error\":\"Sign in to use personal feedback.\"}"
+    },
+    {
+      "route": "speech-coach",
+      "auth": "missing",
+      "status": 401,
+      "body": "{\"code\":\"authentication_required\",\"error\":\"Sign in to use personal feedback.\"}"
+    },
+    {
+      "route": "speech-coach",
+      "auth": "invalid",
+      "status": 401,
+      "body": "{\"code\":\"authentication_required\",\"error\":\"Sign in to use personal feedback.\"}"
+    },
+    {
+      "route": "practice-passage",
+      "auth": "missing",
+      "status": 401,
+      "body": "{\"code\":\"authentication_required\",\"error\":\"Sign in to use personal feedback.\"}"
+    },
+    {
+      "route": "practice-passage",
+      "auth": "invalid",
+      "status": 401,
+      "body": "{\"code\":\"authentication_required\",\"error\":\"Sign in to use personal feedback.\"}"
+    }
+  ],
+  "privacyStatus": 200,
+  "privacyMentionsDeletionMarker": true,
+  "privacyMentionsDiagnostics": true
+}

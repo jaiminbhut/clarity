@@ -1,3 +1,4 @@
+import { cachedFeedback, saveFeedback, getPremiumIdentity, premiumHeaders, requestPremium, newOperationId, type PremiumContext } from '@/services/pro-access';
 import { parsePartialJson } from 'ai';
 
 // NOTE: uses the global fetch (Expo's WinterCG fetch on SDK 57+), which both
@@ -184,13 +185,17 @@ export async function requestAiCoaching(
   result: SessionResult,
   signal?: AbortSignal,
   onPartial?: (partial: PartialAiCoachingBreakdown) => void,
+  context: PremiumContext = result.premiumContext ?? { sessionKey: newOperationId() },
 ): Promise<AiCoachingBreakdown> {
-  const response = await fetch('/api/speech-coach', {
+  const owner = getPremiumIdentity();
+  const cacheKey = `coach/${context.sessionKey}/${result.source}`;
+  const saved = cachedFeedback<AiCoachingBreakdown>(cacheKey);
+  if (saved) return saved;
+  const response = await requestPremium('/api/speech-coach', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...premiumHeaders(`${context.sessionKey}:${result.source}`, context) },
     body: JSON.stringify({ stats: buildSpeechCoachStats(result) }),
-    signal,
-  });
+  }, signal);
 
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => null);
@@ -239,5 +244,7 @@ export async function requestAiCoaching(
     throw new Error('The coaching response was incomplete.');
   }
 
+  if (owner !== getPremiumIdentity()) throw new Error('Your account changed. Please try again.');
+  saveFeedback(cacheKey, payload);
   return payload;
 }

@@ -1,3 +1,6 @@
+import { getPreviewContext, newOperationId, premiumHeaders, requestPremium } from '@/services/pro-access';
+import { getAccentLocale } from '@/services/settings';
+import { getLastSignedInUserId } from '@/services/auth-state';
 /**
  * Single-word playback for the results word detail and the Home "Words to
  * master" card.
@@ -42,14 +45,16 @@ const CLIP_PAD_MS = 120;
 let player: AudioPlayer | null = null;
 
 function clipFile(word: string): File {
-  return new File(Paths.cache, `pronounce-${encodeURIComponent(word.toLowerCase())}.mp3`);
+  return new File(Paths.cache, `pronounce-v1-${encodeURIComponent(getLastSignedInUserId() ?? "guest")}-${getAccentLocale()}-alloy-tts1-${encodeURIComponent(word.toLowerCase())}.mp3`);
 }
 
 async function fetchPronunciation(word: string, file: File): Promise<void> {
-  const response = await fetch('/api/pronounce', {
+  const operationId = newOperationId();
+  const context = getPreviewContext() ?? { sessionKey: operationId };
+  const response = await requestPremium('/api/pronounce', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word }),
+    headers: { 'Content-Type': 'application/json', ...premiumHeaders(operationId, context) },
+    body: JSON.stringify({ word, locale: getAccentLocale() }),
   });
 
   if (!response.ok) {
@@ -84,8 +89,13 @@ async function play(uri: string): Promise<void> {
  * it does not wait for the clip to finish.
  */
 export async function speakWord(word: string): Promise<void> {
+  const owner = getLastSignedInUserId();
   const file = clipFile(word);
+  // Preserve audio unlocked before account-specific caching was introduced.
+  const legacy = new File(Paths.cache, `pronounce-${encodeURIComponent(word.toLowerCase())}.mp3`);
+  if (!file.exists && legacy.exists) { await play(legacy.uri); return; }
   if (!file.exists) await fetchPronunciation(word, file);
+  if (owner !== getLastSignedInUserId()) throw new Error('Your account changed. Please try again.');
   await play(file.uri);
 }
 

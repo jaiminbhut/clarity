@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import { proTables } from './proTables';
 
 /**
  * Every table is scoped by `userId`, the Clerk subject from
@@ -125,6 +126,7 @@ export const settingsStampFields = {
 };
 
 export default defineSchema({
+  ...proTables,
   // `by_user` ends in the implicit `_creationTime`, which is what the pull
   // cursor ranges over: server insertion order is the only order that cannot
   // miss a session another device recorded earlier but pushed later.
