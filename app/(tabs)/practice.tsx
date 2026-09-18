@@ -12,6 +12,7 @@ import { FreestyleCard } from '@/components/practice/freestyle-card';
 import { AddPassageRow, PassageRow } from '@/components/practice/passage-row';
 import { IntroReveal } from '@/components/splash';
 import { SectionHeader, ThemedText } from '@/components/ui';
+import { languageOf } from '@/constants/accents';
 import { DRILLS } from '@/constants/drills';
 import { PASSAGES } from '@/constants/passages';
 import { spacing, TAB_BAR_SCROLL_INSET } from '@/constants/theme';
@@ -19,6 +20,8 @@ import { randomTopic, TOPICS, type FreestyleTopic } from '@/constants/topics';
 import { useCustomPassages } from '@/hooks/use-custom-passages';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useDerivedStats, useRecommendations } from '@/hooks/use-session-history';
+import { useSetting } from '@/hooks/use-settings';
+import { inLanguage } from '@/lib/passage-text';
 import {
   FREESTYLE_ID_PREFIX,
   freestyleTopicIdFrom,
@@ -55,7 +58,12 @@ export default function PracticeScreen() {
   const insets = useSafeAreaInsets();
 
   const recommendations = useRecommendations();
-  const customPassages = useCustomPassages();
+  const [accentLocale] = useSetting('accentLocale');
+  const language = languageOf(accentLocale);
+  // Everything listed is in the practice language, the user's own passages
+  // included (classified by script, so nobody has to tag them).
+  const customPassages = inLanguage(useCustomPassages(), language);
+  const drills = inLanguage(DRILLS, language);
   const stats = useDerivedStats();
   const [topic, setTopic] = useState<FreestyleTopic>(TOPICS[0]);
 
@@ -79,7 +87,7 @@ export default function PracticeScreen() {
     .map((category) => ({
       category,
       title: CATEGORY_TITLES[category]!,
-      passages: PASSAGES.filter((p) => p.category === category),
+      passages: inLanguage(PASSAGES, language).filter((p) => p.category === category),
     }))
     .filter((g) => g.passages.length > 0);
 
@@ -116,21 +124,25 @@ export default function PracticeScreen() {
         <PassageCarousel items={recommendations.items} onStart={openContent} />
       </IntroReveal>
 
-      {/* Drills */}
-      <IntroReveal order={3}>
-        <SectionHeader title="Drills" subtitle="One-minute workouts for a single skill" />
-      </IntroReveal>
-      <IntroReveal order={4} fade={false}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.drillsRow}
-          contentContainerStyle={styles.drillsContent}>
-          {DRILLS.map((drill) => (
-            <DrillCard key={drill.id} drill={drill} onStart={openContent} />
-          ))}
-        </ScrollView>
-      </IntroReveal>
+      {/* Drills: English sound workouts, so absent when practicing Hindi. */}
+      {drills.length > 0 ? (
+        <>
+          <IntroReveal order={3}>
+            <SectionHeader title="Drills" subtitle="One-minute workouts for a single skill" />
+          </IntroReveal>
+          <IntroReveal order={4} fade={false}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.drillsRow}
+              contentContainerStyle={styles.drillsContent}>
+              {drills.map((drill) => (
+                <DrillCard key={drill.id} drill={drill} onStart={openContent} />
+              ))}
+            </ScrollView>
+          </IntroReveal>
+        </>
+      ) : null}
 
       {/* Freestyle */}
       <IntroReveal order={5}>

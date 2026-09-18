@@ -4,13 +4,14 @@ import { StyleSheet, View } from 'react-native';
 
 import { ChoiceRow, OnboardingScreen } from '@/components/onboarding';
 import { OptionCard } from '@/components/ui';
-import { ACCENTS, hasPhonemeDetail } from '@/constants/accents';
+import { ACCENTS, hasPhonemeDetail, languageOf } from '@/constants/accents';
 import { spacing } from '@/constants/theme';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSetting } from '@/hooks/use-settings';
 
 /**
- * Step 2: the accent Azure grades against. The consequential question: the
+ * Step 2: the language and accent Azure grades against (Hindi is one of the
+ * choices, and switches the practice language). The consequential question: the
  * same British reading scored 80 against en-US and 100 against en-GB
  * (`constants/accents.ts`). Asked before the first session so the first score
  * is a fair one.
@@ -22,8 +23,8 @@ export default function AccentStep() {
 
   return (
     <OnboardingScreen
-      title="Which accent feels closest?"
-      subtitle="Choose the closest match to how you speak. We use it to give you fairer pronunciation feedback."
+      title="Which language and accent?"
+      subtitle="Choose the closest match to how you speak. We use it to pick your practice language and give you fairer pronunciation feedback."
       ctaTitle="Continue"
       onContinue={() => {
         // Continue confirms the accent, including the preselected one nobody
@@ -38,9 +39,11 @@ export default function AccentStep() {
       note={
         writeFailed
           ? 'That choice could not be saved. Your device may be out of storage.'
-          : !hasPhonemeDetail(accentLocale)
-            ? 'Sound-by-sound tips are available for American English. This accent still includes word and syllable scores.'
-            : null
+          : languageOf(accentLocale) === 'hi'
+            ? 'You will practice in Hindi, scored on words, fluency and completeness. Sound-by-sound tips are available for American English.'
+            : !hasPhonemeDetail(accentLocale)
+              ? 'Sound-by-sound tips are available for American English. This accent still includes word and syllable scores.'
+              : null
       }>
       <View style={styles.list}>
         {ACCENTS.map((accent) => (

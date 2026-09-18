@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ModalCloseToolbar } from '@/components/modal-close-toolbar';
 import { ThemedText } from '@/components/ui';
-import { ACCENTS, hasPhonemeDetail } from '@/constants/accents';
+import { ACCENTS, hasPhonemeDetail, languageOf } from '@/constants/accents';
 import { GOAL_OPTIONS } from '@/constants/goals';
 import { SKILL_GOALS, SKILL_LABELS, SKILL_ORDER } from '@/constants/metrics';
 import { radius, spacing, type } from '@/constants/theme';
@@ -315,10 +315,10 @@ export default function SettingsScreen() {
           </Pressable>
         </SettingsCard>
 
-        <Eyebrow>YOUR ACCENT</Eyebrow>
+        <Eyebrow>LANGUAGE & ACCENT</Eyebrow>
         <Blurb>
-          Your reading is scored against this accent. Picking the one you actually speak stops
-          your own vowels being counted as mistakes.
+          You practice in this language, and your reading is scored against this accent. Picking
+          the one you actually speak stops your own vowels being counted as mistakes.
         </Blurb>
         <SettingsCard>
           {ACCENTS.map((accent, index) => (
@@ -336,7 +336,13 @@ export default function SettingsScreen() {
         {/* Measured, not assumed: only en-US returns phoneme symbols. Saying so
             is the difference between a user making an informed trade and one
             wondering why the per-sound tips stopped appearing. */}
-        {!hasPhonemeDetail(accentLocale) ? (
+        {languageOf(accentLocale) === 'hi' ? (
+          <ThemedText variant="footnoteProse" tone="tertiary" style={styles.note}>
+            Passages, transcripts and coaching switch to Hindi. Hindi is scored on words, fluency
+            and completeness; per-sound and intonation feedback are available for American English
+            only.
+          </ThemedText>
+        ) : !hasPhonemeDetail(accentLocale) ? (
           <ThemedText variant="footnoteProse" tone="tertiary" style={styles.note}>
             Per-sound feedback, the tips that name a sound like /θ/, is available for American
             English only. You still get word and syllable scores.

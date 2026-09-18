@@ -19,6 +19,9 @@ const accentLocale = v.union(
   v.literal('en-AU'),
   v.literal('en-CA'),
   v.literal('en-IN'),
+  // Hindi practice. Older app builds read an unknown locale as their default
+  // (`parseAccentLocale`), so adding a member here is safe for them.
+  v.literal('hi-IN'),
 );
 
 const skillKey = v.union(

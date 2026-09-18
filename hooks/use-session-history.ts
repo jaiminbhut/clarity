@@ -1,5 +1,7 @@
 import { useMemo, useSyncExternalStore } from 'react';
 
+import { languageOf } from '@/constants/accents';
+import { textLanguage } from '@/lib/passage-text';
 import { recommend, type RecommendationSet } from '@/lib/recommendations';
 import {
   skillProfile,
@@ -73,21 +75,31 @@ export function useWords(count = 5): {
 } {
   const stats = useWordStats();
   const records = useSessionRecords();
+  const language = languageOf(useSettings().accentLocale);
   return useMemo(() => {
-    const fromStats = wordsToMaster(stats, count);
+    // Rank everything, then keep the practice language's words: a Hindi
+    // learner's "words to master" are Hindi words, and the generated practice
+    // passage is written in the same language as the words it is given.
+    const inLanguage = (list: { word: string; count: number }[]) =>
+      list.filter((w) => textLanguage(w.word) === language).slice(0, count);
+    const fromStats = inLanguage(wordsToMaster(stats, Number.MAX_SAFE_INTEGER));
     return {
-      toMaster: fromStats.length > 0 ? fromStats : topChallengingWords(records, count),
+      toMaster:
+        fromStats.length > 0
+          ? fromStats
+          : inLanguage(topChallengingWords(records, Number.MAX_SAFE_INTEGER)),
       mastered: wordsMastered(stats),
     };
-  }, [stats, records, count]);
+  }, [stats, records, count, language]);
 }
 
 /** Weakest-skill content picks for the Practice tab's Recommended section. */
 export function useRecommendations(): RecommendationSet {
   const records = useSessionRecords();
-  const { prioritySkill } = useSettings();
+  const { prioritySkill, accentLocale } = useSettings();
+  const language = languageOf(accentLocale);
   return useMemo(
-    () => recommend(records, skillProfile(records), prioritySkill),
-    [records, prioritySkill],
+    () => recommend(records, skillProfile(records), prioritySkill, language),
+    [records, prioritySkill, language],
   );
 }

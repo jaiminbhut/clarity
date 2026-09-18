@@ -1,6 +1,8 @@
 export type SpeechCoachStats = {
   /** 'passage' | 'drill' read against a reference text; 'freestyle' impromptu. */
   mode: 'passage' | 'drill' | 'freestyle';
+  /** The language spoken. Absent means English, as every older client sends. */
+  language?: 'en' | 'hi';
   /** Freestyle only: the recognized transcript, capped for the prompt. */
   transcriptExcerpt?: string;
   overallScore: number;

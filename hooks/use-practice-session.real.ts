@@ -13,8 +13,9 @@ import {
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 
+import { languageOf, localeForText, recognizerLocale } from '@/constants/accents';
 import { modeForId } from '@/lib/passage-catalog';
-import { tokenizePassage } from '@/lib/passage-text';
+import { textLanguage, tokenizePassage } from '@/lib/passage-text';
 import { PassageAligner } from '@/services/alignment';
 import { assessSession } from '@/services/azure-pronunciation';
 import {
@@ -52,6 +53,7 @@ import type {
   PracticeStatus,
   SessionResult,
 } from '@/types/session';
+import type { AccentLocale } from '@/types/settings';
 
 /**
  * The real practice-session engine: expo-speech-recognition for the live
@@ -82,6 +84,8 @@ type RecognitionMode = 'on-device' | 'network';
 
 type Machine = {
   status: PracticeStatus;
+  /** Heard and graded in; fixed at start() from the passage's language. */
+  locale: AccentLocale;
   aligner: PassageAligner;
   sessionId: string;
   mode: RecognitionMode;
@@ -151,6 +155,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
   if (machineRef.current === null) {
     machineRef.current = {
       status: 'idle',
+      locale: 'en-US',
       aligner: new PassageAligner(tokenized),
       sessionId: makeSessionId(),
       mode: 'on-device',
@@ -280,7 +285,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
     m.expectEnd = false;
     m.startedCount += 1;
     ExpoSpeechRecognitionModule.start({
-      lang: 'en-US',
+      lang: recognizerLocale(m.locale),
       interimResults: true,
       continuous: true,
       maxAlternatives: 5,
@@ -644,7 +649,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
           const assessments = await assessSession(wavChunks, {
             key,
             region,
-            locale: getAccentLocale(),
+            locale: m.locale,
           });
           const azure = buildAzureResult({
             ...base,
@@ -666,7 +671,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
       }
     }
 
-    scoringDegraded({ reason: degraded, locale: getAccentLocale(), durationMs });
+    scoringDegraded({ reason: degraded, locale: m.locale, durationMs });
     return buildLiveFallbackResult(base);
   };
 
@@ -687,6 +692,14 @@ export function usePracticeSession(passage: Passage): PracticeSession {
         if (m.status === 'listening' || m.status === 'processing') return;
         claimEngine(instanceId);
         resetMachine(m);
+        m.locale = localeForText(textLanguage(passage.text), getAccentLocale());
+        if (languageOf(m.locale) === 'hi') {
+          // Hindi recognition is server-side on iOS (Apple ships no on-device
+          // hi-IN model), so asking for on-device only buys a guaranteed
+          // failure, a restart, and a misleading fallback event per session.
+          m.mode = 'network';
+          m.retriedNetwork = true;
+        }
         // Bail out immediately where SFSpeechRecognizer doesn't exist at all
         // (e.g. iOS simulators) instead of burning the auto-restart budget.
         if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
@@ -806,7 +819,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
           Observe.reportError(e);
           scoringDegraded({
             reason: 'processing-failed',
-            locale: getAccentLocale(),
+            locale: m.locale,
             durationMs: Math.max(1, Math.round(m.accumulatedActiveMs)),
           });
           finalResult = buildLiveFallbackResult({

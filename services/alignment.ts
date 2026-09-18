@@ -152,11 +152,24 @@ function editDistance(a: string, b: string): number {
 }
 
 /**
+ * Devanagari vowels, vowel signs, anusvara/visarga and virama: everything but
+ * the consonant skeleton. `U+0901` is folded away by `normalizeToken` already.
+ */
+const DEVANAGARI_NON_CONSONANT = /[\u0902\u0903\u0904-\u0914\u093e-\u094d\u0955-\u0957\u0962\u0963]/g;
+
+/**
  * A compact phonetic key. It is intentionally conservative: it is only a
  * fallback for recognizer spellings such as "nite"/"night", never the primary
  * match signal.
+ *
+ * Hindi uses the same idea as the English branch, dropping vowels and keeping
+ * consonants, which absorbs the vowel-length and matra spellings recognizers
+ * disagree on (दिवाली / दीवाली).
  */
 function phoneticKey(input: string): string {
+  if (/[\u0900-\u097f]/.test(input)) {
+    return input.replace(DEVANAGARI_NON_CONSONANT, '').replace(/(.)\1+/g, '$1').slice(0, 6);
+  }
   const value = input
     .replace(/^kn/, 'n')
     .replace(/^wr/, 'r')

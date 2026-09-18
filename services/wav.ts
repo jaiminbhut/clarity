@@ -129,6 +129,66 @@ export function sliceWav(bytes: Uint8Array, startMs: number, endMs: number): Uin
   return out;
 }
 
+/** Window over which loudness is compared when looking for a cut point. */
+const QUIET_WINDOW_MS = 100;
+
+/**
+ * Split a recording into consecutive [startMs, endMs) spans no longer than
+ * `maxMs`, for services that cap clip length.
+ *
+ * A fixed-length cut lands mid-word as often as not, and a transcriber hears the
+ * two halves as two different (wrong) words. So each cut goes at the quietest
+ * `QUIET_WINDOW_MS` window in the last `searchMs` before the limit, which on
+ * natural speech is almost always a breath or a gap between words. Silence is a
+ * mean-absolute-amplitude comparison, which is enough to find a gap and cheap
+ * enough to run over minutes of audio.
+ *
+ * Spans tile the whole file with no gaps or overlap.
+ */
+export function planQuietSplits(
+  bytes: Uint8Array,
+  maxMs: number,
+  searchMs = 5_000,
+): { startMs: number; endMs: number }[] {
+  const f = parseWavHeader(bytes);
+  if (f.bitsPerSample !== 16) throw new Error('planQuietSplits expects 16-bit PCM');
+  const totalMs = (f.dataByteLength / f.byteRate) * 1000;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const samplesPerMs = f.sampleRate / 1000;
+
+  const loudness = (startMs: number): number => {
+    const first = Math.floor(startMs * samplesPerMs);
+    const count = Math.floor(QUIET_WINDOW_MS * samplesPerMs);
+    let sum = 0;
+    for (let s = first; s < first + count; s++) {
+      sum += Math.abs(view.getInt16(f.dataOffset + s * f.blockAlign, true));
+    }
+    return sum / count;
+  };
+
+  const spans: { startMs: number; endMs: number }[] = [];
+  let start = 0;
+  while (totalMs - start > maxMs) {
+    const limit = start + maxMs;
+    const earliest = Math.max(start + QUIET_WINDOW_MS, limit - searchMs);
+    let cut = limit;
+    let quietest = Number.POSITIVE_INFINITY;
+    // Step by half a window; the latest of equally quiet windows wins so clips
+    // stay as long as allowed.
+    for (let t = earliest; t + QUIET_WINDOW_MS <= limit; t += QUIET_WINDOW_MS / 2) {
+      const level = loudness(t);
+      if (level <= quietest) {
+        quietest = level;
+        cut = t + QUIET_WINDOW_MS / 2;
+      }
+    }
+    spans.push({ startMs: start, endMs: cut });
+    start = cut;
+  }
+  if (totalMs - start > 0) spans.push({ startMs: start, endMs: totalMs });
+  return spans;
+}
+
 /** Concatenate same-format WAVs into a single playable file. */
 export function concatWavs(parts: Uint8Array[]): Uint8Array {
   if (parts.length === 0) throw new Error('concatWavs: no parts');

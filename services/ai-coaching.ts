@@ -8,6 +8,7 @@ import type {
   PartialAiCoachingBreakdown,
   SpeechCoachStats,
 } from '@/types/ai-coaching';
+import { textLanguage } from '@/lib/passage-text';
 import { PHONEME_WEAK_MAX, type ResultWord, type SessionResult } from '@/types/session';
 
 const MAX_CHALLENGING_WORDS = 5;
@@ -112,9 +113,14 @@ export function buildSpeechCoachStats(result: SessionResult): SpeechCoachStats {
       : undefined;
   const weakSounds = weakestSounds(result.words);
   const prosody = prosodyFlags(result.words);
+  // From the words themselves: a result carries no language field, and the
+  // script of what was read or said is the ground truth anyway.
+  const spoken = result.transcript || result.words.map((word) => word.word).join(' ');
+  const language = textLanguage(spoken);
 
   return {
     mode,
+    ...(language === 'hi' ? { language } : {}),
     ...(transcriptExcerpt != null ? { transcriptExcerpt } : {}),
     overallScore: result.overallScore,
     accuracy: result.accuracy,

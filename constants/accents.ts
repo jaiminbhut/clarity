@@ -17,10 +17,12 @@
  * PURE module — no React. Safe under bun.
  */
 
-import type { AccentLocale } from '@/types/settings';
+import type { AccentLocale, PracticeLanguage } from '@/types/settings';
 
 export type Accent = {
   locale: AccentLocale;
+  /** The language this choice practices in. */
+  language: PracticeLanguage;
   /** What the user calls their accent, not the locale code. */
   label: string;
   /** Country or region, for the row's secondary line. */
@@ -36,11 +38,15 @@ export type Accent = {
  * rather than letting the feature quietly disappear.
  */
 export const ACCENTS: readonly Accent[] = [
-  { locale: 'en-US', label: 'American', region: 'United States' },
-  { locale: 'en-GB', label: 'British', region: 'United Kingdom' },
-  { locale: 'en-AU', label: 'Australian', region: 'Australia' },
-  { locale: 'en-CA', label: 'Canadian', region: 'Canada' },
-  { locale: 'en-IN', label: 'Indian', region: 'India' },
+  { locale: 'en-US', language: 'en', label: 'American', region: 'English · United States' },
+  { locale: 'en-GB', language: 'en', label: 'British', region: 'English · United Kingdom' },
+  { locale: 'en-AU', language: 'en', label: 'Australian', region: 'English · Australia' },
+  { locale: 'en-CA', language: 'en', label: 'Canadian', region: 'English · Canada' },
+  { locale: 'en-IN', language: 'en', label: 'Indian', region: 'English · India' },
+  // Hindi is last: it changes the practice language, not only the accent.
+  // Azure assesses hi-IN at word level (accuracy, fluency, completeness); like
+  // the non-US English accents it returns no phoneme symbols.
+  { locale: 'hi-IN', language: 'hi', label: 'Hindi', region: 'हिन्दी · Practice in Hindi' },
 ] as const;
 
 export const DEFAULT_ACCENT: AccentLocale = 'en-US';
@@ -54,4 +60,29 @@ export function hasPhonemeDetail(locale: AccentLocale): boolean {
 
 export function accentFor(locale: AccentLocale): Accent {
   return ACCENTS.find((accent) => accent.locale === locale) ?? ACCENTS[0];
+}
+
+export function languageOf(locale: AccentLocale): PracticeLanguage {
+  return accentFor(locale).language;
+}
+
+/**
+ * The locale a session over `text` is heard and graded in. The passage's own
+ * script decides the language, so a Hindi passage is always read in Hindi and
+ * an English one in English, whatever the setting says now. Within English the
+ * user's accent applies; a Hindi speaker reading English is graded as Indian
+ * English rather than against a General American reference.
+ */
+export function localeForText(language: PracticeLanguage, preferred: AccentLocale): AccentLocale {
+  if (language === 'hi') return 'hi-IN';
+  return languageOf(preferred) === 'en' ? preferred : 'en-IN';
+}
+
+/**
+ * The locale the on-device recognizer listens in. English stays on `en-US`
+ * for every accent: the passage hints and the aligner were tuned against it,
+ * and the accent only matters to Azure's grading. Hindi must listen in Hindi.
+ */
+export function recognizerLocale(locale: AccentLocale): string {
+  return languageOf(locale) === 'hi' ? 'hi-IN' : 'en-US';
 }

@@ -17,12 +17,15 @@ import { IntroReveal } from '@/components/splash';
 import { WeeklyProgress } from '@/components/weekly-progress';
 import { SectionHeader, ThemedText } from '@/components/ui';
 import { WordsToMaster } from '@/components/words-to-master';
+import { languageOf } from '@/constants/accents';
 import { PASSAGES } from '@/constants/passages';
 import { spacing, TAB_BAR_SCROLL_INSET } from '@/constants/theme';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSessionRecords, useDerivedStats, useWords } from '@/hooks/use-session-history';
 import { useNow } from '@/hooks/use-now';
+import { useSetting } from '@/hooks/use-settings';
 import { useSpeakingSummary } from '@/hooks/use-speaking-summary';
+import { inLanguage } from '@/lib/passage-text';
 import { totals } from '@/lib/stats';
 import { generateWordPracticePassage } from '@/services/practice-generation';
 import { speakWord } from '@/services/word-pronunciation';
@@ -52,6 +55,8 @@ export default function HomeScreen() {
   const now = useNow();
   const stats = useDerivedStats();
   const records = useSessionRecords();
+  const [accentLocale] = useSetting('accentLocale');
+  const language = languageOf(accentLocale);
   // The same rolling-7-day figures Analytics leads with, so the two tabs can
   // never disagree about this week.
   const summary = useSpeakingSummary();
@@ -83,7 +88,10 @@ export default function HomeScreen() {
     if (generatingPractice) return;
     setGeneratingPractice(true);
     try {
-      const passage = await generateWordPracticePassage(toMaster.map((w) => w.word));
+      const passage = await generateWordPracticePassage(
+        toMaster.map((w) => w.word),
+        language,
+      );
       router.push(`/session/${passage.id}`);
     } catch (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -151,7 +159,7 @@ export default function HomeScreen() {
       </IntroReveal>
       <IntroReveal order={4} fade={false}>
         <PassageCarousel
-          items={PASSAGES}
+          items={inLanguage(PASSAGES, language)}
           onStart={(item) => router.push(`/session/${item.id}`)}
         />
       </IntroReveal>

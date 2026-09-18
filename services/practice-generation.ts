@@ -14,6 +14,7 @@
 // resolves them against file:/// and would 404 here.
 import { tokenizePassage } from '@/lib/passage-text';
 import type { Passage } from '@/types/session';
+import type { PracticeLanguage } from '@/types/settings';
 
 /** Matches the editor's "Slow" pace option: these are the user's hardest words. */
 const TARGET_WPM = 120;
@@ -33,11 +34,12 @@ export function getGeneratedPassage(id: string | undefined): Passage | undefined
 
 export async function generateWordPracticePassage(
   words: readonly string[],
+  language: PracticeLanguage = 'en',
 ): Promise<Passage> {
   const response = await fetch('/api/practice-passage', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ words }),
+    body: JSON.stringify({ words, language }),
   });
 
   if (!response.ok) {

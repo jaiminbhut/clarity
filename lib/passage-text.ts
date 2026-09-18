@@ -31,15 +31,61 @@ export type TokenizedPassage = {
   sentences: SentenceRange[];
 };
 
-/** Lowercase, strip diacritics and everything but letters/digits/apostrophes. */
+/**
+ * The matchable form of a word, in any script the app practices.
+ *
+ * Latin: lowercase, accents stripped (café → cafe), letters, digits and
+ * apostrophes kept. This is exactly what the English-only version did.
+ *
+ * Devanagari keeps its vowel signs, virama and anusvara (they are the word;
+ * stripping them the way Latin accents are stripped would merge different
+ * words), with two folds for spellings recognizers and writers use
+ * interchangeably:
+ *  - chandrabindu ँ → anusvara ं  (हूँ / हूं)
+ *  - nukta ़ dropped              (ज़रूर / जरूर; NFKD first splits क़ into क + ़)
+ * Danda and double danda are punctuation and go with the rest.
+ */
 export function normalizeToken(token: string): string {
   return token
     .toLowerCase()
     .normalize('NFKD')
-    .replace(/[^a-z0-9']/g, '');
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\u0901/g, '\u0902')
+    .replace(/\u093c/g, '')
+    .replace(/[^a-z0-9'\u0900-\u0963\u0966-\u097f]/g, '');
 }
 
-const SENTENCE_END = /[.!?]["')\]]*$/;
+/** True when the text is mostly Devanagari letters. */
+function isMostlyDevanagari(text: string): boolean {
+  let devanagari = 0;
+  let latin = 0;
+  for (const ch of text) {
+    if (ch >= '\u0900' && ch <= '\u097f') devanagari++;
+    else if (/[a-z]/i.test(ch)) latin++;
+  }
+  return devanagari > latin;
+}
+
+/**
+ * The language a text is written in, from its script. Built-in passages set
+ * their language explicitly; custom and AI-generated ones are classified here,
+ * so a passage the user writes in Hindi is filed with the Hindi content without
+ * anyone having to tag it.
+ */
+export function textLanguage(text: string): 'en' | 'hi' {
+  return isMostlyDevanagari(text) ? 'hi' : 'en';
+}
+
+/** The items written in `language`, in their original order. */
+export function inLanguage<T extends { text: string }>(
+  items: readonly T[],
+  language: 'en' | 'hi',
+): T[] {
+  return items.filter((item) => textLanguage(item.text) === language);
+}
+
+/** Hindi ends sentences with a danda (।) or double danda (॥). */
+const SENTENCE_END = /[.!?\u0964\u0965]["')\]]*$/;
 /** Cap paragraph size so the teleprompter's active paragraph stays cheap to render. */
 const MAX_SENTENCES_PER_PARAGRAPH = 6;
 

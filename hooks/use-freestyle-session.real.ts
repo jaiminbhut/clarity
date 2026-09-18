@@ -6,10 +6,14 @@ import {
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 
+import { languageOf, recognizerLocale } from '@/constants/accents';
 import { countDiscourseMarkers, countFillers } from '@/lib/fillers';
 import { tokenizeTranscript } from '@/services/alignment';
+import { transcribeFreestyleRecording } from '@/services/freestyle-transcription';
+import { transcriptionFallback } from '@/services/observe-events';
 import { claimEngine, releaseEngine } from '@/services/recognition-owner';
 import { buildFreestyleResult } from '@/services/scoring';
+import { getAccentLocale } from '@/services/settings';
 import {
   concatWavs,
   downsampleWaveform,
@@ -23,6 +27,7 @@ import type {
   PracticeStatus,
   SessionResult,
 } from '@/types/session';
+import type { AccentLocale } from '@/types/settings';
 
 /**
  * The freestyle (impromptu) session engine: the same expo-speech-recognition
@@ -50,6 +55,8 @@ type WpmSample = { atActiveMs: number; words: number };
 
 type Machine = {
   status: PracticeStatus;
+  /** The practice language and accent, fixed at start(). */
+  locale: AccentLocale;
   sessionId: string;
   mode: RecognitionMode;
   retriedNetwork: boolean;
@@ -116,6 +123,7 @@ export function useFreestyleSession(): FreestyleSession {
   if (machineRef.current === null) {
     machineRef.current = {
       status: 'idle',
+      locale: 'en-US',
       sessionId: makeSessionId(),
       mode: 'on-device',
       retriedNetwork: false,
@@ -191,7 +199,7 @@ export function useFreestyleSession(): FreestyleSession {
     m.expectEnd = false;
     m.startedCount += 1;
     ExpoSpeechRecognitionModule.start({
-      lang: 'en-US',
+      lang: recognizerLocale(m.locale),
       interimResults: true,
       continuous: true,
       // No reference to rerank against — take the recognizer's best.
@@ -396,13 +404,10 @@ export function useFreestyleSession(): FreestyleSession {
   const finishProcessing = async (): Promise<SessionResult> => {
     const m = machineRef.current!;
     const durationMs = Math.max(1, Math.round(m.accumulatedActiveMs));
-    const paceWpm =
-      m.finalWordCount > 0 && durationMs >= 1_000
-        ? Math.round(m.finalWordCount / (durationMs / 60_000))
-        : 0;
 
     let audioUri: string | null = null;
     let waveform: number[] | null = null;
+    let fullWav: Uint8Array | null = null;
     try {
       const loaded = await Promise.all(
         m.segmentUris.map(async (uri): Promise<Uint8Array | null> => {
@@ -427,6 +432,7 @@ export function useFreestyleSession(): FreestyleSession {
         } catch {
           // ignore
         }
+        fullWav = full;
         out.write(full);
         audioUri = out.uri;
         waveform = downsampleWaveform(full, 30);
@@ -437,11 +443,37 @@ export function useFreestyleSession(): FreestyleSession {
       waveform = null;
     }
 
+    let transcript = m.finalParts.join(' ');
+    let wordCount = m.finalWordCount;
+    let fillers = m.fillerCount;
+    let discourseMarkers = m.discourseMarkerCount;
+
+    // Indian English and Hindi speakers get a server re-transcription (Sarvam,
+    // verbatim): the platform recognizer mishears Indian English and smooths
+    // away the very hesitations this mode scores, in both languages. Any
+    // failure keeps the live numbers.
+    const locale = m.locale;
+    if ((locale === 'en-IN' || locale === 'hi-IN') && fullWav) {
+      const outcome = await transcribeFreestyleRecording(fullWav, locale);
+      if (outcome.ok && outcome.transcript.length > 0) {
+        const norms = tokenizeTranscript(outcome.transcript).map((t) => t.norm);
+        transcript = outcome.transcript;
+        wordCount = norms.length;
+        fillers = countFillers(norms);
+        discourseMarkers = countDiscourseMarkers(norms);
+      } else if (!outcome.ok) {
+        transcriptionFallback({ reason: outcome.reason, locale, durationMs });
+      }
+    }
+
+    const paceWpm =
+      wordCount > 0 && durationMs >= 1_000 ? Math.round(wordCount / (durationMs / 60_000)) : 0;
+
     return buildFreestyleResult({
-      transcript: m.finalParts.join(' '),
+      transcript,
       paceWpm,
-      fillerCount: m.fillerCount,
-      discourseMarkerCount: m.discourseMarkerCount,
+      fillerCount: fillers,
+      discourseMarkerCount: discourseMarkers,
       durationMs,
       audioUri,
       waveform: waveform ?? waveformFromMeterHistory(m.meterHistory),
@@ -465,6 +497,12 @@ export function useFreestyleSession(): FreestyleSession {
         if (m.status === 'listening' || m.status === 'processing') return;
         claimEngine(instanceId);
         resetMachine(m);
+        m.locale = getAccentLocale();
+        if (languageOf(m.locale) === 'hi') {
+          // Server-side on iOS; see the same branch in use-practice-session.
+          m.mode = 'network';
+          m.retriedNetwork = true;
+        }
         if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
           fail(
             'recognition-unavailable',

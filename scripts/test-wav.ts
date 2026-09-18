@@ -21,6 +21,7 @@ import {
   concatWavs,
   downsampleWaveform,
   parseWavHeader,
+  planQuietSplits,
   sliceWav,
   wavDurationMs,
 } from '@/services/wav';
@@ -408,6 +409,33 @@ section('scoring: all-chunks-failed returns null; live fallback works');
   assertEq(live.completeness, 75, '3/4 matched → 75');
   assert(live.overallScore > 0 && live.overallScore <= 100, 'overall in range');
   assert(live.intonation === 70, 'neutral intonation proxy');
+}
+
+// ---------------------------------------------------------------------------
+section('planQuietSplits');
+{
+  const short = makeWav(20_000, () => 0.5);
+  assertEq(planQuietSplits(short, 25_000), [{ startMs: 0, endMs: 20_000 }], 'short file is one span');
+
+  // 60s of speech with a 300ms gap at 22s and at 45s: cuts land in the gaps,
+  // not at the 25s limit.
+  const gaps = [22_000, 45_000];
+  const speech = makeWav(60_000, (t) => (gaps.some((g) => t >= g && t < g + 300) ? 0 : 0.6));
+  const spans = planQuietSplits(speech, 25_000);
+  assertEq(spans.length, 3, 'three spans');
+  assert(spans[0].endMs >= 22_000 && spans[0].endMs <= 22_300, 'first cut inside first gap', spans[0]);
+  assert(spans[1].endMs >= 45_000 && spans[1].endMs <= 45_300, 'second cut inside second gap', spans[1]);
+  assertEq(spans[2].endMs, 60_000, 'last span reaches the end');
+  assert(
+    spans.every((s, i) => i === 0 || s.startMs === spans[i - 1].endMs),
+    'spans tile with no gap or overlap',
+  );
+  assert(spans.every((s) => s.endMs - s.startMs <= 25_000), 'no span over the limit');
+
+  // Uniform loudness has no gap to find: still bounded by the limit.
+  const flat = planQuietSplits(makeWav(70_000, () => 0.6), 25_000);
+  assert(flat.every((s) => s.endMs - s.startMs <= 25_000), 'flat audio still bounded', flat);
+  assertEq(flat[flat.length - 1].endMs, 70_000, 'flat audio fully covered');
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

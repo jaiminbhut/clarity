@@ -7,9 +7,11 @@
 import { DRILLS } from '@/constants/drills';
 import { PASSAGES } from '@/constants/passages';
 import { TOPICS, type FreestyleTopic } from '@/constants/topics';
+import { inLanguage } from '@/lib/passage-text';
 import { SKILL_KNOWN_SAMPLES } from '@/lib/stats';
 import type { SessionRecord, SkillKey, SkillProfile } from '@/types/history';
 import type { Passage } from '@/types/session';
+import type { PracticeLanguage } from '@/types/settings';
 
 /** Pseudo-passage id namespace the Practice tab branches on to route into
  * the freestyle session instead of the teleprompter. */
@@ -79,7 +81,18 @@ function suggestedTopic(records: readonly SessionRecord[]): FreestyleTopic {
 }
 
 /** Fixed starter set for a user with no history and no stated priority. */
-function starterSet(): RecommendationSet {
+function starterSet(language: PracticeLanguage): RecommendationSet {
+  if (language === 'hi') {
+    // No Hindi drills exist; the Hindi passages plus an impromptu topic.
+    return {
+      items: [
+        ...inLanguage(PASSAGES, 'hi'),
+        freestylePassageItem(TOPICS.find((t) => t.id === 'introduce-yourself')!),
+      ],
+      reason: null,
+      weakest: null,
+    };
+  }
   return {
     items: [
       PASSAGES.find((p) => p.id === 'epic-speech')!,
@@ -99,16 +112,20 @@ function starterSet(): RecommendationSet {
  * It steers ONLY the cold start: once three sessions exist and a skill has enough
  * samples to be known, the measured profile decides and the stated preference is
  * ignored. The preference never fabricates a skill estimate.
+ *
+ * Only content in the practice `language` is offered. The skill profile spans
+ * every session regardless of language: a hesitant speaker is hesitant in both.
  */
 export function recommend(
   records: readonly SessionRecord[],
   profile: SkillProfile,
   priority: SkillKey | null = null,
+  language: PracticeLanguage = 'en',
 ): RecommendationSet {
   const known = TIE_PRIORITY.filter((k) => profile[k].samples >= SKILL_KNOWN_SAMPLES);
   const coldStart = records.length < 3 || known.length === 0;
 
-  if (coldStart && priority === null) return starterSet();
+  if (coldStart && priority === null) return starterSet(language);
 
   // argmin over known skills; TIE_PRIORITY order makes ties actionable-first.
   let weakest: SkillKey = priority ?? known[0];
@@ -127,10 +144,12 @@ export function recommend(
   const byStaleness = (a: Passage, b: Passage) =>
     (last.get(a.id) ?? 0) - (last.get(b.id) ?? 0);
 
-  const drills = DRILLS.filter((d) => d.skills?.includes(weakest))
+  const passagePool = inLanguage(PASSAGES, language);
+  const drills = inLanguage(DRILLS, language)
+    .filter((d) => d.skills?.includes(weakest))
     .sort(byStaleness)
     .slice(0, 2);
-  const passages = PASSAGES.filter(
+  const passages = passagePool.filter(
     (p) => p.skills?.includes(weakest) && p.id !== mostRecentPassageId,
   )
     .sort(byStaleness)
@@ -144,7 +163,7 @@ export function recommend(
   // Fillers has no tagged passages: freestyle leads, stale passages fill in.
   const items =
     weakest === 'fillers'
-      ? [...freestyle, ...drills, ...[...PASSAGES].sort(byStaleness).slice(0, 2)]
+      ? [...freestyle, ...drills, ...[...passagePool].sort(byStaleness).slice(0, 2)]
       : [...drills, ...passages, ...freestyle];
 
   // A stated priority explains itself as a plan, not as a diagnosis of history

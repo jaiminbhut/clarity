@@ -39,9 +39,27 @@ export const FILLER_UNIGRAMS = new Set([
   'basically',
   'literally',
   'actually',
+  // Hindi hesitation sounds, as a hi-IN recognizer spells them (already in
+  // `normalizeToken` form: chandrabindu folded to anusvara). `हम` is NOT here:
+  // it is the word "we".
+  'अं',
+  'अम',
+  'अम्म',
+  'उम',
+  'उम्म',
+  'उह',
+  'हम्म',
+  'एं',
 ]);
 
-export const FILLER_BIGRAMS = new Set(['you know', 'i mean', 'sort of', 'kind of']);
+export const FILLER_BIGRAMS = new Set([
+  'you know',
+  'i mean',
+  'sort of',
+  'kind of',
+  // "I mean", the stock Hindi filler phrase.
+  'मेरा मतलब',
+]);
 
 /**
  * Words that are fillers in some positions and ordinary vocabulary in others.
@@ -55,6 +73,14 @@ export const DISCOURSE_MARKERS = new Set([
   'okay',
   'ok',
   'anyway',
+  // Hindi words that often fill ("I mean", "that is", "okay…") but are just as
+  // often meaning-bearing. Counted and shown, never scored. The very common
+  // particles that also fill (`तो`, `ना`, `वो`) are left out on purpose: they
+  // are grammar far more often than filler, and counting them would make every
+  // Hindi speaker look hesitant.
+  'मतलब',
+  'यानी',
+  'अच्छा',
 ]);
 
 /** Count scored fillers in normalized tokens — greedy bigrams first, then
@@ -74,9 +100,19 @@ export function countFillers(norms: readonly string[]): number {
   return count;
 }
 
-/** Count ambiguous discourse markers. Reported, not scored. */
+/** Count ambiguous discourse markers. Reported, not scored. A marker inside a
+ * scored filler phrase ("मेरा मतलब") is already counted as that filler, so it
+ * is skipped here rather than counted twice. */
 export function countDiscourseMarkers(norms: readonly string[]): number {
   let count = 0;
-  for (const norm of norms) if (DISCOURSE_MARKERS.has(norm)) count++;
+  let i = 0;
+  while (i < norms.length) {
+    if (i + 1 < norms.length && FILLER_BIGRAMS.has(`${norms[i]} ${norms[i + 1]}`)) {
+      i += 2;
+      continue;
+    }
+    if (DISCOURSE_MARKERS.has(norms[i])) count++;
+    i += 1;
+  }
   return count;
 }

@@ -23,6 +23,9 @@ const UNHELPFUL_HINTS = new Set([
   'on', 'or', 'she', 'that', 'the', 'their', 'them', 'then', 'there', 'they',
   'this', 'to', 'was', 'we', 'were', 'what', 'when', 'which', 'who', 'will',
   'with', 'you', 'your',
+  // Hindi postpositions, auxiliaries and particles, in `normalizeToken` form.
+  'है', 'हैं', 'था', 'थी', 'थे', 'हो', 'का', 'की', 'के', 'को', 'में', 'से', 'ने',
+  'पर', 'और', 'भी', 'ही', 'तो', 'कि', 'न', 'नहीं', 'एक', 'यह', 'वह', 'ये', 'वो',
 ]);
 
 /** How far past the frontier a hint is still about the near future. Beyond this

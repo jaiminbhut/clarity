@@ -9,13 +9,21 @@
 
 import type { SkillKey } from '@/types/history';
 
-/** The English locales offered in Settings. See `constants/accents.ts`. */
-export type AccentLocale = 'en-US' | 'en-GB' | 'en-AU' | 'en-CA' | 'en-IN';
+/**
+ * The speech locales offered in Settings: five English accents and Hindi. One
+ * choice sets both the practice language and the accent it is graded against.
+ * See `constants/accents.ts`.
+ */
+export type AccentLocale = 'en-US' | 'en-GB' | 'en-AU' | 'en-CA' | 'en-IN' | 'hi-IN';
+
+/** The language a user practices in, derived from `AccentLocale`. */
+export type PracticeLanguage = 'en' | 'hi';
 
 export type Settings = {
   /**
-   * The accent pronunciation is graded against. Passed straight to Azure as the
-   * recognition locale, so this changes real scores.
+   * The language and accent pronunciation is graded against. Passed straight to
+   * Azure as the recognition locale, so this changes real scores. `hi-IN` also
+   * switches the practice language to Hindi.
    */
   accentLocale: AccentLocale;
   /**

@@ -3,7 +3,9 @@
  *   bun scripts/test-alignment.ts
  */
 
-import { tokenizePassage } from '@/lib/passage-text';
+import { PASSAGES } from '@/constants/passages';
+import { countDiscourseMarkers, countFillers } from '@/lib/fillers';
+import { inLanguage, normalizeToken, textLanguage, tokenizePassage } from '@/lib/passage-text';
 import {
   PassageAligner,
   SKIP_TOLERANCE,
@@ -395,6 +397,84 @@ section('hypothesis selection: word timings survive reranking');
   const different = { transcript: 'omega beta gamma delta', confidence: 0.99 };
   const notRestored = withBorrowedTimings(different, [timed, different]);
   assertEq(notRestored.segments, undefined, 'different words do not borrow timings');
+}
+
+// ---------------------------------------------------------------------------
+section('Hindi: normalization');
+{
+  assertEq(normalizeToken('हूँ'), normalizeToken('हूं'), 'chandrabindu folds to anusvara');
+  assertEq(normalizeToken('ज़रूर'), normalizeToken('जरूर'), 'nukta is ignored');
+  assertEq(normalizeToken('क़िताब'), 'किताब', 'precomposed nukta letters fold too');
+  assertEq(normalizeToken('है।'), 'है', 'danda is punctuation');
+  assertEq(normalizeToken('“नमस्ते,”'), 'नमस्ते', 'quotes and commas stripped');
+  assert(normalizeToken('कि') !== normalizeToken('की'), 'vowel length is kept: different words');
+  assertEq(normalizeToken("Café's"), "cafe's", 'English normalization unchanged');
+}
+
+// ---------------------------------------------------------------------------
+section('Hindi: tokenizing passages');
+{
+  const t = tokenizePassage('मैं घर जाता हूँ। तुम कहाँ हो? ठीक है।');
+  assertEq(t.sentences.length, 3, 'danda and question mark end sentences');
+  assertEq(t.matchableIndices.length, t.words.length, 'every Hindi word is matchable');
+  assertEq(textLanguage('मैं हर सुबह पार्क जाता हूँ'), 'hi', 'Devanagari reads as Hindi');
+  assertEq(textLanguage('I walk in the park'), 'en', 'Latin reads as English');
+  const hindi = inLanguage(PASSAGES, 'hi');
+  const english = inLanguage(PASSAGES, 'en');
+  assert(hindi.length >= 4, 'built-in Hindi passages exist', hindi.length);
+  assertEq(hindi.length + english.length, PASSAGES.length, 'every passage is one language');
+  for (const p of hindi) {
+    const tokens = tokenizePassage(p.text);
+    assertEq(
+      tokens.matchableIndices.length,
+      tokens.words.length,
+      `${p.id}: every word matchable (no hyphenated compounds or stray symbols)`,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+section('Hindi: aligning a reading');
+{
+  const tokenized = tokenizePassage('मैं हर सुबह पार्क में टहलने जाता हूँ।');
+  const a = new PassageAligner(tokenized);
+  a.beginSegment(0);
+  // The recognizer writes anusvara where the passage has chandrabindu.
+  a.handleEvent(ev('मैं हर सुबह पार्क में टहलने जाता हूं', true, 3000));
+  assertEq(a.matchedCount, 8, 'every word matched across spelling variants');
+  assertEq(a.fillerCount, 0, 'no fillers in a clean read');
+
+  const b = new PassageAligner(tokenizePassage('आज दीवाली का त्योहार है।'));
+  b.beginSegment(0);
+  b.handleEvent(ev('आज दिवाली का त्योहार है', true, 2500));
+  assertEq(b.matchedCount, 5, 'vowel-length spelling variant recovered as a fuzzy match');
+
+  const c = new PassageAligner(tokenizePassage('हम कल दिल्ली जाएंगे।'));
+  c.beginSegment(0);
+  c.handleEvent(ev('हम कल अं दिल्ली उम्म जाएंगे', true, 3000));
+  assertEq(c.fillerCount, 2, 'Hindi hesitations are fillers');
+  assertEq(c.matchedCount, 4, '"हम" (we) is read as a word, never as a filler');
+}
+
+// ---------------------------------------------------------------------------
+section('Hindi: fillers in free speech');
+{
+  const norms = tokenizeTranscript('अं मेरा मतलब है कि हम्म यानी हम कल चलेंगे').map((t) => t.norm);
+  assertEq(countFillers(norms), 3, 'अं + मेरा मतलब (one phrase) + हम्म');
+  assertEq(countDiscourseMarkers(norms), 1, 'यानी is a marker, counted but not scored');
+  assertEq(
+    countFillers(tokenizeTranscript('हम तो कल ना चलेंगे वो भी').map((t) => t.norm)),
+    0,
+    'common particles (हम, तो, ना, वो) are never fillers',
+  );
+}
+
+// ---------------------------------------------------------------------------
+section('Hindi: recognizer hints');
+{
+  const hints = buildContextualStrings(tokenizePassage('मैं हर सुबह पार्क में टहलने जाता हूँ।'), 0);
+  assert(hints.includes('टहलने'), 'distinctive Hindi words become hints', hints);
+  assert(!hints.includes('में'), 'Hindi postpositions are not spent as single-word hints', hints);
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

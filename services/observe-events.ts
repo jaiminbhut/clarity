@@ -25,6 +25,7 @@
 
 import { Observe } from 'expo-observe';
 
+import type { TranscriptionFailure } from '@/services/freestyle-transcription';
 import type { SessionEndedReason, SessionMode } from '@/types/history';
 import type { PracticeErrorCode, SessionResult } from '@/types/session';
 import type { AccentLocale } from '@/types/settings';
@@ -193,6 +194,24 @@ export function recognitionFallback(a: { reason: string }) {
     displayName: 'Recognition fell back to network',
     severity: 'warn',
     attributes: { from: 'on-device', to: 'network', reason: a.reason },
+  });
+}
+
+/**
+ * The server re-transcription of a freestyle recording failed, so the result
+ * kept the on-device transcript. The session still scores, but on the
+ * transcript the re-transcription exists to replace, so a rise here means
+ * Indian English speakers are quietly back on the weaker measure.
+ */
+export function transcriptionFallback(a: {
+  reason: TranscriptionFailure;
+  locale: AccentLocale;
+  durationMs: number;
+}) {
+  Observe.logEvent('freestyle.transcription_fallback', {
+    displayName: 'Freestyle kept the on-device transcript',
+    severity: 'warn',
+    attributes: { reason: a.reason, locale: a.locale, durationMs: a.durationMs },
   });
 }
 

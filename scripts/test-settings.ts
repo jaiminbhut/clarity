@@ -3,7 +3,14 @@
  *   bun scripts/test-settings.ts
  */
 
-import { ACCENTS, accentFor, hasPhonemeDetail } from '@/constants/accents';
+import {
+  ACCENTS,
+  accentFor,
+  hasPhonemeDetail,
+  languageOf,
+  localeForText,
+  recognizerLocale,
+} from '@/constants/accents';
 import { DEFAULT_GOAL_MINUTES, GOAL_OPTIONS } from '@/constants/goals';
 import { createMemoryKv } from '@/lib/history-store';
 import { createSettingsStore, DEFAULT_SETTINGS } from '@/lib/settings-store';
@@ -284,9 +291,21 @@ section('accent catalog');
   assertEq(ACCENTS[0].locale, 'en-US', 'en-US is first and is the default');
   assert(new Set(ACCENTS.map((a) => a.locale)).size === ACCENTS.length, 'locales are unique');
   assert(
-    ACCENTS.every((a) => /^en-[A-Z]{2}$/.test(a.locale)),
-    'every locale is a well-formed BCP-47 English tag',
+    ACCENTS.every((a) => /^(en|hi)-[A-Z]{2}$/.test(a.locale)),
+    'every locale is a well-formed BCP-47 English or Hindi tag',
   );
+  assert(
+    ACCENTS.every((a) => a.locale.startsWith(`${a.language}-`)),
+    'every choice practices in the language its locale names',
+  );
+  assertEq(languageOf('hi-IN'), 'hi', 'hi-IN practices Hindi');
+  assertEq(languageOf('en-GB'), 'en', 'English accents practice English');
+  assertEq(recognizerLocale('en-GB'), 'en-US', 'English accents listen in en-US');
+  assertEq(recognizerLocale('hi-IN'), 'hi-IN', 'Hindi listens in Hindi');
+  assertEq(localeForText('hi', 'en-GB'), 'hi-IN', 'a Hindi passage is heard in Hindi');
+  assertEq(localeForText('en', 'en-GB'), 'en-GB', 'an English passage keeps the accent');
+  assertEq(localeForText('en', 'hi-IN'), 'en-IN', 'English read by a Hindi learner is Indian English');
+  assert(!hasPhonemeDetail('hi-IN'), 'Hindi does not claim phoneme symbols');
   assert(
     ACCENTS.every((a) => a.label.length > 0 && a.region.length > 0),
     'every accent has a label and a region',
