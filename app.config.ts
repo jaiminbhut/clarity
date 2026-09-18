@@ -1,4 +1,20 @@
 import { ConfigContext, ExpoConfig } from 'expo/config';
+import { withEntitlementsPlist, type ConfigPlugin } from 'expo/config-plugins';
+
+/**
+ * LOCAL ONLY. A free Apple "Personal Team" cannot sign an app that carries the
+ * Sign in with Apple entitlement, and both `@clerk/expo` and
+ * `expo-apple-authentication` add it unconditionally. With
+ * IOS_PERSONAL_TEAM=1 in .env.local the entitlement is stripped so the dev build
+ * installs on a device; the Apple button then fails, and the debug-only
+ * "Sign in as dev" button (EXPO_PUBLIC_DEV_SIGNIN_*) is the way in. Never set
+ * this in an EAS environment.
+ */
+const withoutAppleSignIn: ConfigPlugin = (config) =>
+  withEntitlementsPlist(config, (mod) => {
+    delete mod.modResults['com.apple.developer.applesignin'];
+    return mod;
+  });
 
 // app.json stays the base layer. This file overrides only what varies per app
 // variant, so `development`, `preview`, and `production` builds install side by
@@ -67,7 +83,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       : plugin;
   });
 
-  return {
+  const personalTeam =
+    process.env.IOS_PERSONAL_TEAM === '1' && process.env.APP_VARIANT === 'development';
+
+  const resolved: ExpoConfig = {
     ...config,
     slug: config.slug ?? 'speakwell',
     name: getName(config.name ?? 'SpeakWell'),
@@ -115,4 +134,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ['expo-dev-client', { addGeneratedScheme: process.env.APP_VARIANT === 'development' }],
     ],
   };
+
+  // Applied last, after every plugin above has added its entitlement.
+  return personalTeam ? withoutAppleSignIn(resolved) : resolved;
 };
