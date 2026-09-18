@@ -27,7 +27,7 @@ import { ThemedText } from '@/components/ui';
 import { marketing, motion, radius, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import { SpeakWellMark } from './speakwell-mark';
+import { SpeakWellMark } from '@/components/ui/speakwell-mark';
 
 const SCREENSHOTS = [
   {
@@ -151,7 +151,7 @@ function scrollTo(anchor: string) {
 function Wordmark({ mobile = false }: { mobile?: boolean }) {
   return (
     <View style={[styles.wordmark, mobile && styles.wordmarkMobile]}>
-      <SpeakWellMark size={mobile ? marketing.size.navMarkMobile : marketing.size.navMark} />
+      <SpeakWellMark tone="marketing" size={mobile ? marketing.size.navMarkMobile : marketing.size.navMark} />
       <ThemedText
         variant={mobile ? 'marketingWordmarkMobile' : 'marketingWordmark'}
         tone="marketingPrimary">
@@ -274,7 +274,7 @@ function AppIcon({ mobile }: { mobile: boolean }) {
         { borderColor: colors.marketingLine },
         mobile && styles.appIconMobile,
       ]}>
-      <SpeakWellMark size={mobile ? marketing.size.appIconMarkMobile : marketing.size.appIconMark} />
+      <SpeakWellMark tone="marketing" size={mobile ? marketing.size.appIconMarkMobile : marketing.size.appIconMark} />
     </View>
   );
 }

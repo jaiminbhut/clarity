@@ -15,7 +15,7 @@ import { File, Paths } from 'expo-file-system';
 import { createHistoryStore } from '@/lib/history-store';
 import { durable, kv } from '@/services/kv';
 import { summarizeWords } from '@/services/ai-coaching';
-import { practiceEnded, practiceStarted } from '@/services/observe-events';
+import { beginPracticeAttempt, type PracticeAttempt } from '@/services/observe-events';
 import type { InflightSession, SessionEndedReason, SessionMode } from '@/types/history';
 import type { SessionResult } from '@/types/session';
 
@@ -41,6 +41,8 @@ const store = createHistoryStore({
 });
 
 export const getRecords = store.getRecords;
+export const getBaseRecords = store.getBaseRecords;
+export const applyAssessment = store.applyAssessment;
 export const subscribe = store.subscribe;
 export const getWordStats = store.getWordStats;
 export const removeRecord = store.removeRecord;
@@ -59,22 +61,14 @@ export const getWordDeltas = store.getWordDeltas;
 export const removeWordDeltas = store.removeWordDeltas;
 export const applyWordVerdicts = store.applyWordVerdicts;
 
-/**
- * Opens the crash checkpoint for a new attempt, and reports the start to EAS
- * Observe on the way through.
- *
- * This is the one call every start passes: the passage, drill, and freestyle
- * screens all open their checkpoint here on mount, and a restart mid-read
- * re-opens it. Instrumenting the store's entry point rather than those four call
- * sites is what keeps `practice.started` from drifting out of step with
- * `practice.ended` the next time an entry point is added.
- */
-export function beginSession(session: Omit<InflightSession, 'startedAt' | 'updatedAt'>) {
-  practiceStarted(session);
+/** Open the durable checkpoint and create a fresh telemetry attempt together. */
+export function beginSession(session: Omit<InflightSession, 'startedAt' | 'updatedAt'>, previewId?: string) {
   store.beginSession(session);
+  return beginPracticeAttempt({ ...session, previewId });
 }
 
 export type SessionMeta = {
+  attempt: PracticeAttempt;
   mode: SessionMode;
   /** Defaults to 'stopped' — a deliberate finish. */
   endedReason?: SessionEndedReason;
@@ -123,10 +117,10 @@ export function recordSession(result: SessionResult, meta: SessionMeta) {
   // Paired with `practice.started` above. Reported here rather than from the two
   // session screens because every terminal path — finished, stopped early, and
   // abandoned by dismissing or restarting — funnels through this one call.
-  practiceEnded(result, {
-    mode: meta.mode,
+  meta.attempt.end(result, {
     endedReason: meta.endedReason ?? 'stopped',
     persisted: written.ok,
+    persistenceReason: written.ok ? 'saved' : written.reason,
   });
 
   return written;

@@ -98,7 +98,7 @@ it, or the author's brand.
       rejects previously exported files). Leave them.
 
       **Still Nathan's artwork, and this is the part MIT does not cover:**
-      - `components/marketing/speakwell-mark.tsx` — renamed, but the SVG is
+      - `components/ui/speakwell-mark.tsx` — renamed, but the SVG is
         still his seven-dot logo geometry, "traced from the source app-icon
         artwork". Replace the shapes.
       - `assets/app.icon`, `app.dev.icon`, `app.preview.icon` (Icon Composer

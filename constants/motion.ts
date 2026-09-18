@@ -24,6 +24,8 @@ export const motion = {
  * gesture rather than two animations that happen to overlap.
  */
 export const springs = {
+  /** Onboarding pages and progress settle together without crossing an edge. */
+  onboarding: { duration: 400, dampingRatio: 1, overshootClamping: true },
   /** Snappy and critically damped: a segmented-control thumb landing. */
   snap: { damping: 32, stiffness: 420, mass: 0.9 },
   /** Slightly under-damped, so a sliding pill gets a small settle at the end. */

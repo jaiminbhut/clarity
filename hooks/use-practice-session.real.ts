@@ -14,6 +14,8 @@ import {
 } from 'expo-speech-recognition';
 
 import { languageOf, localeForText, recognizerLocale } from '@/constants/accents';
+import { PREVIEW_MS } from '@/convex/proPolicy';
+import { PremiumError } from '@/services/pro-access';
 import { modeForId } from '@/lib/passage-catalog';
 import { textLanguage, tokenizePassage } from '@/lib/passage-text';
 import { PassageAligner } from '@/services/alignment';
@@ -25,10 +27,8 @@ import {
 } from '@/services/live-recognition';
 import {
   audioProcessingFailed,
-  practiceFailed,
   recognitionFallback,
   scoringDegraded,
-  type ScoringDegradedReason,
 } from '@/services/observe-events';
 import { claimEngine, releaseEngine } from '@/services/recognition-owner';
 import { getAccentLocale } from '@/services/settings';
@@ -272,7 +272,6 @@ export function usePracticeSession(passage: Passage): PracticeSession {
     if (mounted.current) setError({ code, message });
     // The error UI tells the user; this tells us. Which code dominates decides
     // whether the fix is the permission ask, the device matrix, or the engine.
-    practiceFailed({ code, mode: modeForId(passage.id) });
     setStatusSafe('error');
   };
 
@@ -425,7 +424,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
         // Simulators often lack on-device model assets — retry network-based.
         m.retriedNetwork = true;
         m.mode = 'network';
-        recognitionFallback({ reason: event.error });
+        recognitionFallback({ mode: 'passage', reason: event.error });
         return; // the trailing `end` event performs the restart
       }
       fail('recognition-unavailable', event.message || 'Speech recognition is unavailable on this device.');
@@ -455,7 +454,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
     if (m.mode === 'on-device' && !m.retriedNetwork && m.lastTransientError) {
       m.retriedNetwork = true;
       m.mode = 'network';
-      recognitionFallback({ reason: m.lastTransientError.code });
+      recognitionFallback({ mode: 'passage', reason: m.lastTransientError.code });
       m.lastTransientError = null;
       startRecognition(m.mode);
       return;
@@ -595,7 +594,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
       // Scores survive this, so nothing surfaces to the user: the attempt just
       // silently loses playback and falls back to a meter-derived waveform. The
       // event says how often; the reported error says which call threw.
-      audioProcessingFailed({ segments: m.segmentUris.length });
+      audioProcessingFailed({ mode: 'passage', segments: m.segmentUris.length });
       Observe.reportError(e);
       audioUri = null;
       waveform = null;
@@ -620,59 +619,33 @@ export function usePracticeSession(passage: Passage): PracticeSession {
       longestPauseMs: pauses.longestPauseMs,
     };
 
-    const key = process.env.EXPO_PUBLIC_AZURE_SPEECH_KEY;
-    const region = process.env.EXPO_PUBLIC_AZURE_SPEECH_REGION;
-    // Narrowed as we get further in. Every path that falls out of this block
-    // ends up scored by the live layer instead, which the user cannot tell apart
-    // from a real grade — so the one event below the block reports which of them
-    // it was rather than leaving the quiet paths silent.
-    let degraded: ScoringDegradedReason = 'azure-unconfigured';
-    if (key && region) {
-      degraded = 'azure-failed';
-      try {
-        const chunks = buildChunks(
-          tokenized,
-          aligner.timeline,
-          segmentDurations,
-          m.segmentActiveStartMs,
-        ).filter((c) => segmentBytes[c.segmentIndex] != null);
-        if (chunks.length === 0) {
-          degraded = 'azure-no-audio';
-        } else {
-          const wavChunks = chunks.map((c) => ({
-            wavBytes: sliceWav(segmentBytes[c.segmentIndex]!, c.startMs, c.endMs),
-            referenceText: c.referenceText,
-          }));
-          // Read here, not from a hook: `stop()` is not a render. The accent
-          // decides which reference Azure grades against, and it is the
-          // difference between a British reading scoring 80 and scoring 100.
-          const assessments = await assessSession(wavChunks, {
-            key,
-            region,
-            locale: m.locale,
-          });
-          const azure = buildAzureResult({
-            ...base,
-            chunks,
-            assessments,
-            segments: {
-              durationsMs: segmentDurations,
-              activeStartMs: m.segmentActiveStartMs,
-            },
-          });
-          if (azure) return azure;
-          degraded = 'azure-unusable';
-        }
-      } catch (e) {
-        if (__DEV__) console.warn('[practice] Azure assessment failed:', e);
-        // Paired with the 'azure-failed' event below, which counts the fallback
-        // without saying whether it was the network, the key, or a bad response.
-        Observe.reportError(e);
-      }
-    }
+    const fallback = buildLiveFallbackResult(base);
+    const assessmentTimeline = [...aligner.timeline];
+    const activeStartMs = [...m.segmentActiveStartMs];
+    // Captured now: Results may run the assessment long after stop(), and the
+    // passage's language, not whatever the setting says by then, decides it.
+    const locale = m.locale;
+    // Stop always saves basic results. Only Results can request paid assessment;
+    // abandoned reads and restarts never run it.
+    const assess: NonNullable<SessionResult['assess']> = async (context) => {
+      if (!audioUri || !(new File(audioUri).exists)) throw new PremiumError('recording_unavailable', 'That recording is no longer available. Start another practice session.');
+      let remainingPreviewMs = context.grantId ? PREVIEW_MS : Infinity;
+      const chunks = buildChunks(tokenized, assessmentTimeline, segmentDurations, activeStartMs)
+        .flatMap(chunk => {
+          const duration = Math.min(chunk.endMs - chunk.startMs, remainingPreviewMs);
+          remainingPreviewMs -= duration;
+          return duration > 0 ? [{ ...chunk, endMs: chunk.startMs + duration }] : [];
+        })
+        .filter(c => segmentBytes[c.segmentIndex] != null);
+      if (!chunks.length || fallback.spokenWords <= 0) throw new Error('There is not enough speech to assess.');
+      const wavChunks = chunks.map(c => ({ wavBytes: sliceWav(segmentBytes[c.segmentIndex]!, c.startMs, c.endMs), referenceText: c.referenceText }));
+      const assessments = await assessSession(wavChunks, { context, locale });
+      const assessed = buildAzureResult({ ...base, chunks, assessments, segments: { durationsMs: segmentDurations, activeStartMs } });
+      if (!assessed) throw new Error('Detailed feedback could not load. Your basic results are saved.');
+      return { ...assessed, premiumContext: context, assess };
+    };
+    return { ...fallback, assess };
 
-    scoringDegraded({ reason: degraded, locale: m.locale, durationMs });
-    return buildLiveFallbackResult(base);
   };
 
   // ---- public API -----------------------------------------------------------
@@ -819,6 +792,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
           Observe.reportError(e);
           scoringDegraded({
             reason: 'processing-failed',
+            mode: 'passage',
             locale: m.locale,
             durationMs: Math.max(1, Math.round(m.accumulatedActiveMs)),
           });

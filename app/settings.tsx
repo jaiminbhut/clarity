@@ -231,7 +231,7 @@ export default function SettingsScreen() {
             } catch (error) {
               Observe.reportError(error);
               setBusy(false);
-              Alert.alert('Could not delete your account', 'Check your connection and try again.');
+              Alert.alert('Could not finish deleting your account', 'Check your connection and try Delete account again. If deletion has started, cloud processing stays disabled until you finish.');
             }
           },
         },

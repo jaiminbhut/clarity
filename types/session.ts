@@ -121,6 +121,13 @@ export function weakestPhoneme(word: ResultWord): ResultPhoneme | null {
 }
 
 export type SessionResult = {
+  /** Random per-attempt telemetry identity, never a backend credential. */
+  telemetryAttemptId?: string;
+  telemetryPreviewId?: string;
+  /** Runtime-only upgrade work. Audio remains local; never serialized into history. */
+  assess?: (context: import('@/services/pro-access').PremiumContext) => Promise<SessionResult>;
+  premiumContext?: import('@/services/pro-access').PremiumContext;
+
   /** Defaults to 'passage' when absent (pre-freestyle results). */
   mode?: SessionMode;
   /** Freestyle only: the full recognized transcript. */
@@ -162,7 +169,7 @@ export type SessionResult = {
   spokenWords: number;
   /** ~30 normalized 0..1 amplitude buckets for the playback pill. */
   waveform: number[];
-  /** 'live' when Azure was unavailable/failed and scores are derived from live data. */
+  /** Basic live scores, or a subsequent paid Azure assessment. */
   source: 'azure' | 'live';
 };
 

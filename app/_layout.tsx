@@ -5,6 +5,7 @@ import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { useFonts } from "expo-font";
 import { Observe, ObserveErrorBoundary, ObserveRoot } from "expo-observe";
+import { AccountBoundary } from "@/components/account-boundary";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
@@ -27,6 +28,7 @@ import { SubscriptionProvider } from "@/hooks/use-subscription";
 import { useTheme } from "@/hooks/use-theme";
 import { clearAccountData } from "@/services/account";
 import { getLastSignedInUserId } from "@/services/auth-state";
+import { getSettings, subscribe as subscribeSettings } from "@/services/settings";
 import {
   getSettingsResolved,
   resetLocalStoresOnce,
@@ -44,10 +46,14 @@ import {
  * nothing. EXPO_PUBLIC_OBSERVE_IN_DEV=1 dispatches them anyway while verifying
  * the wiring; it has no effect on release builds.
  */
-Observe.configure({
-  integrations: { "expo-router": true },
-  dispatchInDebug: process.env.EXPO_PUBLIC_OBSERVE_IN_DEV === "1",
-});
+function configureObserve() {
+  Observe.configure({
+    integrations: { "expo-router": { filteredParams: ["grantId", "sessionKey", "intentId"] } },
+    dispatchInDebug: process.env.EXPO_PUBLIC_OBSERVE_IN_DEV === "1",
+    dispatchingEnabled: getSettings().improveClarity,
+  });
+}
+configureObserve();
 
 /**
  * Read in app code and passed explicitly: Metro inlines EXPO_PUBLIC_ variables
@@ -77,11 +83,19 @@ const CLERK_PUBLISHABLE_KEY =
 const CONVEX_URL = process.env.EXPO_PUBLIC_CONVEX_URL ?? "";
 
 let convexClient: ConvexReactClient | null = null;
+let convexOwner: string | null | undefined;
 
 /** A module-level singleton, not `useMemo`: a recomputed memo would open a
  * second WebSocket and orphan the first. */
 function getConvexClient(): ConvexReactClient {
+  const owner = getLastSignedInUserId();
+  if (convexClient && convexOwner !== owner) {
+    // Discard offline mutation retries before a different Clerk identity can
+    // authenticate them. AccountBoundary has already unmounted old consumers.
+    convexClient = null;
+  }
   if (!convexClient) {
+    convexOwner = owner;
     convexClient = new ConvexReactClient(CONVEX_URL, {
       // Off on purpose. This project has a web build (EXPO_MARKETING_WEB=1)
       // where the default attaches a real `beforeunload` prompt.
@@ -99,8 +113,24 @@ function getConvexClient(): ConvexReactClient {
  * component below the boundary.
  */
 function ConvexRoot({ children }: { children: ReactNode }) {
+  const client = getConvexClient();
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      // ConvexProvider's own cleanup must clear auth before close(). Defer
+      // until all unmount effects finish; Strict Mode's immediate remount
+      // cancels this cleanup rather than reusing a closed transport.
+      queueMicrotask(() => {
+        if (mounted.current) return;
+        if (convexClient === client) convexClient = null;
+        void client.close();
+      });
+    };
+  }, [client]);
   return (
-    <ConvexProviderWithClerk client={getConvexClient()} useAuth={useAuth}>
+    <ConvexProviderWithClerk client={client} useAuth={useAuth}>
       {children}
     </ConvexProviderWithClerk>
   );
@@ -220,7 +250,7 @@ function RootNavigator({ scheme }: { scheme: ColorSchemeName }) {
       </Stack.Protected>
 
       {/* A one-way corridor at the root: no swipe back toward sign-in. Movement
-          between steps is the nested stack's business. */}
+          between steps stays inside the onboarding pager. */}
       <Stack.Protected guard={signedIn && !onboarded}>
         <Stack.Screen
           name="(onboarding)"
@@ -232,6 +262,16 @@ function RootNavigator({ scheme }: { scheme: ColorSchemeName }) {
           /settings or /paywall must not resolve. */}
       <Stack.Protected guard={signedIn && onboarded}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="feedback"
+          options={{
+            ...blurHeader,
+            title: "Saved feedback",
+            headerBackVisible: true,
+            headerBackButtonDisplayMode: "minimal",
+            headerTintColor: colors.foreground,
+          }}
+        />
         <Stack.Screen
           name="session"
           options={{ presentation: "fullScreenModal", headerShown: false }}
@@ -274,6 +314,9 @@ function RootNavigator({ scheme }: { scheme: ColorSchemeName }) {
 }
 
 function RootLayout() {
+  // Honour the privacy control immediately, including a preference restored
+  // from another device. Reconfiguration retains the same router integration.
+  useEffect(() => subscribeSettings(configureObserve), []);
   // Expo Go can't embed fonts at build time, so load them here. The splash
   // overlay needs no fonts, so it plays over the wait — only the routes
   // beneath it hold for the font load.
@@ -306,7 +349,7 @@ function RootLayout() {
           error to Observe. Outside the providers so a throw in one of them is
           caught too, and outside the font gate so the fallback can render
           before the fonts land. */}
-      <ObserveErrorBoundary fallback={ObserveErrorFallback}>
+      <ObserveErrorBoundary fallback={(props) => <ObserveErrorFallback {...props} />}>
         {/* Keyboard frame tracking for `KeyboardStickyView`, so a committing
             button can ride the keyboard up frame-for-frame. */}
         <KeyboardProvider>
@@ -325,6 +368,7 @@ function RootLayout() {
               ConvexSync: the root gate below is synchronous and offline-first,
               and a Convex gate would put a network wait in front of a
               returning user's own local data. */}
+            <AccountBoundary>
             <ConvexRoot>
             <AuthBridge />
             <ConvexSync />
@@ -358,6 +402,7 @@ function RootLayout() {
               </AppReadyProvider>
             </SubscriptionProvider>
             </ConvexRoot>
+            </AccountBoundary>
           </ClerkProvider>
         </KeyboardProvider>
       </ObserveErrorBoundary>

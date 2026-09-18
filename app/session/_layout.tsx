@@ -1,3 +1,4 @@
+import { newOperationId } from '@/services/pro-access';
 import { Stack } from 'expo-router/stack';
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
@@ -36,7 +37,7 @@ export default function SessionLayout() {
   const bumpRetry = useCallback(() => setRetryToken((t) => t + 1), []);
 
   const setResult = useCallback((next: SessionResult | null, id: string | null = null) => {
-    setResultState(next);
+    setResultState(next ? { ...next, premiumContext: next.premiumContext ?? { sessionKey: id ?? newOperationId() } } : null);
     setRecordId(id);
   }, []);
 

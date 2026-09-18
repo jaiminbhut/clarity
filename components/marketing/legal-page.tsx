@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/ui';
 import { marketing, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import { SpeakWellMark } from './speakwell-mark';
+import { SpeakWellMark } from '@/components/ui/speakwell-mark';
 
 export type LegalSection = {
   heading: string;
@@ -48,7 +48,7 @@ export function LegalPage({ title, metaDescription, updated, intro, sections }: 
         <View style={{ width: pageWidth, gap: desktop ? marketing.gap.section : marketing.gap.sectionMobile }}>
           <Link href="/" asChild>
             <Pressable accessibilityRole="link" style={styles.wordmark}>
-              <SpeakWellMark size={marketing.size.navMark} />
+              <SpeakWellMark tone="marketing" size={marketing.size.navMark} />
               <ThemedText variant="marketingWordmark" tone="marketingPrimary">
                 speakwell
               </ThemedText>

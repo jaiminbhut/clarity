@@ -65,15 +65,6 @@ export default function FreestyleScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Results screen's Retry bumps the token; restart a fresh attempt.
-  const prevRetryRef = useRef(retryToken);
-  useEffect(() => {
-    if (retryToken === prevRetryRef.current) return;
-    prevRetryRef.current = retryToken;
-    navigatedRef.current = false;
-    sessionRef.current.restart();
-  }, [retryToken]);
-
   const meta = useMemo(
     () => ({ mode: 'freestyle' as const, topicId: topic.id, contentTitle: topic.title }),
     [topic.id, topic.title],
@@ -83,6 +74,8 @@ export default function FreestyleScreen() {
   // checkpoint once it has written its record — see `useSessionCheckpoint`.
   const checkpoint = useSessionCheckpoint({
     status: session.status,
+    error: session.error,
+    retryToken,
     elapsedMs: session.elapsedMs,
     // No reference text, so the committed transcript is the only word evidence.
     spokenWords: session.finalTranscript.trim().split(/\s+/).filter(Boolean).length,
@@ -91,18 +84,28 @@ export default function FreestyleScreen() {
     onBackground: () => sessionRef.current.pause(),
   });
 
+  // Results screen's Retry bumps the token; restart a fresh attempt.
+  const prevRetryRef = useRef(retryToken);
+  useEffect(() => {
+    if (retryToken === prevRetryRef.current) return;
+    prevRetryRef.current = retryToken;
+    navigatedRef.current = false;
+    sessionRef.current.restart();
+  }, [retryToken]);
+
   const finishSession = useCallback(
     async (endedReason: SessionEndedReason = 'stopped') => {
       if (navigatedRef.current) return;
       navigatedRef.current = true;
+      const attempt = checkpoint.attempt;
       try {
         const result = await sessionRef.current.stop();
         // Once per attempt (navigatedRef); each retry becomes its own record.
-        const written = recordSession(result, { ...meta, endedReason });
+        const written = recordSession(result, { ...meta, attempt, endedReason });
         // Pushing Results does not unmount this screen, so the checkpoint has to
         // be cleared here or it gets recovered as a duplicate next launch.
         checkpoint.end();
-        setResult(result, written.ok ? written.record.id : null);
+        setResult({ ...result, telemetryAttemptId: attempt.id }, written.ok ? written.record.id : null);
         router.push('/session/results');
       } catch {
         navigatedRef.current = false;
@@ -116,6 +119,7 @@ export default function FreestyleScreen() {
   const handleDismiss = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const s = sessionRef.current;
+    const attempt = checkpoint.attempt;
     const live = s.status === 'listening' || s.status === 'paused';
     navigatedRef.current = true;
     if (live) {
@@ -123,7 +127,7 @@ export default function FreestyleScreen() {
       // still recovers these minutes.
       void s
         .stop()
-        .then((result) => recordSession(result, { ...meta, endedReason: 'abandoned' }))
+        .then((result) => recordSession(result, { ...meta, attempt, endedReason: 'abandoned' }))
         .catch(() => {})
         .finally(() => checkpoint.end());
     } else {
@@ -153,20 +157,22 @@ export default function FreestyleScreen() {
   const handleRestart = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const s = sessionRef.current;
+    const attempt = checkpoint.attempt;
     if (s.status !== 'listening' && s.status !== 'paused') {
       navigatedRef.current = false;
+      checkpoint.begin();
       s.restart();
       return;
     }
     navigatedRef.current = true;
     void s
       .stop()
-      .then((result) => recordSession(result, { ...meta, endedReason: 'abandoned' }))
+      .then((result) => recordSession(result, { ...meta, attempt, endedReason: 'abandoned' }))
       .catch(() => {})
       .finally(() => {
         navigatedRef.current = false;
-        sessionRef.current.restart();
         checkpoint.begin();
+        sessionRef.current.restart();
       });
   }, [meta, checkpoint]);
 

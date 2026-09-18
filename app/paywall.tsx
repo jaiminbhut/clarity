@@ -2,7 +2,11 @@ import { CheckmarkCircle02Icon, Crown02Icon, Tick02Icon } from '@hugeicons/core-
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { getPremiumIdentity, refreshProAccess } from '@/services/pro-access';
+import { getIdentifiedPurchaserId } from '@/services/auth-state';
+import { settlePaywall } from '@/services/paywall-intent';
+import { beginPaywallVisit, newTelemetryId, paywallSource, proEvent } from '@/services/observe-events';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -45,10 +49,10 @@ const PLAN_GAP = spacing.md;
 const INDICATOR_SIZE = 24;
 
 const FEATURES = [
-  'Unlimited practice sessions',
-  'Personal AI speech coaching',
-  'Full speaking analytics and history',
-  'Early access to new features',
+  'Unlimited personal AI coaching',
+  'Detailed pronunciation feedback',
+  'Practice built around your difficult words',
+  'Full progress comparisons',
 ];
 
 /** Display order and the per-card caption wording, keyed by package type. */
@@ -182,11 +186,21 @@ function PlanCard({
  */
 export default function PaywallScreen() {
   useMarkInteractive();
+  const { intentId, source } = useLocalSearchParams<{ intentId?: string; source?: string }>();
+  const telemetry = useRef<ReturnType<typeof beginPaywallVisit> | null>(null);
+  useEffect(() => {
+    const visit = beginPaywallVisit(paywallSource(source));
+    telemetry.current = visit;
+    return () => {
+      visit.close('dismissed');
+      settlePaywall(intentId, false);
+    };
+  }, [intentId, source]);
 
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const { available, refresh, restore } = useSubscription();
+  const { available, isLoading: storeLoading, refresh, restore } = useSubscription();
 
   // The carousel bleeds past the screen's content padding, so the card width is
   // measured off the full screen rather than the column it aligns to.
@@ -202,14 +216,21 @@ export default function PaywallScreen() {
   // A purchase can land while the customer is also tapping the close button;
   // one latch keeps that from popping two screens.
   const dismissed = useRef(false);
-  const close = () => {
+  const close = (unlocked = false) => {
     if (dismissed.current) return;
     dismissed.current = true;
+    telemetry.current?.close(unlocked ? 'unlocked' : 'dismissed');
+    settlePaywall(intentId, unlocked);
     router.back();
   };
 
   useEffect(() => {
+    if (!available && !storeLoading) telemetry.current?.failed('store_unavailable');
+  }, [available, storeLoading, intentId, source]);
+
+  useEffect(() => {
     if (!available) return;
+    const visit = telemetry.current;
     let alive = true;
     setLoadFailed(false);
     fetchCurrentOffering()
@@ -219,14 +240,16 @@ export default function PaywallScreen() {
         setPlans(sorted);
         setSelectedId(sorted[0]?.identifier ?? null);
         setLoadFailed(sorted.length === 0);
+        if (sorted.length) visit?.ready(sorted.length);
+        else visit?.failed('no_plans');
       })
       .catch(() => {
-        if (alive) setLoadFailed(true);
+        if (alive) { setLoadFailed(true); visit?.failed('offering_failed'); }
       });
     return () => {
       alive = false;
     };
-  }, [available]);
+  }, [available, intentId, source]);
 
   const selected = plans?.find((plan) => plan.identifier === selectedId) ?? null;
   const savings = plans ? annualSavings(plans) : null;
@@ -251,54 +274,92 @@ export default function PaywallScreen() {
     setSelectedId(plan.identifier);
   };
 
-  const buy = async () => {
-    if (!selected || busy) return;
-    setBusy(true);
-    const result = await purchasePackage(selected);
-    setBusy(false);
-
-    switch (result.outcome) {
-      case 'purchased':
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        refresh();
-        close();
-        return;
-      case 'pending':
-        Alert.alert(
-          'Payment pending',
-          'Your payment is still processing. SpeakWell Pro unlocks as soon as it clears.',
-        );
-        return;
-      case 'failed':
-        Alert.alert('Purchase failed', result.message);
-        return;
-      case 'cancelled':
-        // A normal outcome, not an error. The paywall stays open.
-        return;
+  const verifyAndClose = async (action: 'purchase' | 'restore', operationId: string, visit: ReturnType<typeof beginPaywallVisit>) => {
+    const attributes = { ...visit.attributes, operationId, action };
+    const startedAt = performance.now();
+    let verified: Awaited<ReturnType<typeof refreshProAccess>>;
+    try {
+      verified = await refreshProAccess();
+    } catch {
+      proEvent('verification_resolved', { ...attributes, outcome: 'failed', durationMs: Math.round(performance.now() - startedAt) });
+      Alert.alert('Purchase received', 'We could not verify access yet. Your purchase is safe. Check your connection and use Restore purchase.');
+      return;
     }
+    proEvent('verification_resolved', { ...attributes, outcome: verified.isPro ? 'verified' : 'pending', durationMs: Math.round(performance.now() - startedAt) });
+    if (verified.isPro) {
+      proEvent('activated', attributes);
+      close(true);
+    } else Alert.alert('Confirming your purchase', 'Your purchase is processing. Use Restore purchase to check again.');
+  };
+
+  const purchaseIdentityReady = (action: 'purchase' | 'restore') => {
+    const owner = getPremiumIdentity();
+    if (owner && getIdentifiedPurchaserId() === owner) return true;
+    if (telemetry.current) proEvent('purchase_blocked', { ...telemetry.current.attributes, action, reason: 'identity_not_ready' });
+    Alert.alert('Connecting your account', 'Please wait for your account to connect, then try again.');
+    return false;
+  };
+  const buy = async () => {
+    if (!selected || busy || !purchaseIdentityReady('purchase') || !telemetry.current) return;
+    const visit = telemetry.current;
+    const operationId = newTelemetryId();
+    const attributes = { ...visit.attributes, operationId, product: selected.product.identifier };
+    const startedAt = performance.now();
+    let resolved = false;
+    proEvent('purchase_started', attributes);
+    setBusy(true);
+    try {
+      const result = await purchasePackage(selected);
+      resolved = true;
+      proEvent('purchase_resolved', { ...attributes, outcome: result.outcome, durationMs: Math.round(performance.now() - startedAt) });
+      switch (result.outcome) {
+        case 'purchased':
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          await refresh();
+          await verifyAndClose('purchase', operationId, visit);
+          return;
+        case 'pending':
+          Alert.alert('Payment pending', 'Your payment is still processing. SpeakWell Pro unlocks as soon as it clears.');
+          return;
+        case 'failed':
+          Alert.alert('Purchase failed', result.message);
+          return;
+        case 'cancelled':
+          return;
+      }
+    } catch {
+      if (!resolved) proEvent('purchase_resolved', { ...attributes, outcome: 'failed', durationMs: Math.round(performance.now() - startedAt) });
+      Alert.alert('Purchase could not finish', 'Please try again, or restore your purchase if you already paid.');
+    } finally { setBusy(false); }
   };
 
   const restorePurchase = async () => {
-    if (busy) return;
+    if (busy || !purchaseIdentityReady('restore') || !telemetry.current) return;
+    const visit = telemetry.current;
+    const operationId = newTelemetryId();
+    const attributes = { ...visit.attributes, operationId };
+    const startedAt = performance.now();
+    let resolved = false;
+    proEvent('restore_started', attributes);
     setBusy(true);
-    const result = await restore();
-    setBusy(false);
-
-    if (result.outcome === 'restored') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      close();
-      return;
-    }
-    if (result.outcome === 'nothingToRestore') {
-      // A successful restore that found nothing. Saying so is the difference
-      // between the customer retrying and the customer contacting support.
-      Alert.alert(
-        'Nothing to restore',
-        'We could not find a SpeakWell Pro purchase on this store account. Make sure you are signed in with the account you bought it on.',
-      );
-      return;
-    }
-    Alert.alert('Restore failed', result.message);
+    try {
+      const result = await restore();
+      resolved = true;
+      proEvent('restore_resolved', { ...attributes, outcome: result.outcome, durationMs: Math.round(performance.now() - startedAt) });
+      if (result.outcome === 'restored') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await verifyAndClose('restore', operationId, visit);
+        return;
+      }
+      if (result.outcome === 'nothingToRestore') {
+        Alert.alert('Nothing to restore', 'We could not find a SpeakWell Pro purchase on this store account. Make sure you are signed in with the account you bought it on.');
+        return;
+      }
+      Alert.alert('Restore failed', result.message);
+    } catch {
+      if (!resolved) proEvent('restore_resolved', { ...attributes, outcome: 'failed', durationMs: Math.round(performance.now() - startedAt) });
+      Alert.alert('Restore could not finish', 'Check your connection and try again.');
+    } finally { setBusy(false); }
   };
 
   if (!available) return <PurchasesUnavailable />;
@@ -331,7 +392,7 @@ export default function PaywallScreen() {
         </View>
 
         <ThemedText variant="largeTitle" style={styles.headline}>
-          Get the full power of SpeakWell
+          Get personal feedback on every practice
         </ThemedText>
 
         <View style={styles.features}>
@@ -384,6 +445,10 @@ export default function PaywallScreen() {
           </ScrollView>
         )}
 
+        <Pressable onPress={() => close()} accessibilityRole="button" style={{ padding: spacing.md, alignItems: 'center' }}>
+          <ThemedText variant="callout" tone="secondary">Continue free</ThemedText>
+        </Pressable>
+
         <PrimaryButton
           title="Continue with SpeakWell Pro"
           onPress={buy}
@@ -418,7 +483,7 @@ export default function PaywallScreen() {
         </View>
       </ScrollView>
       {/* Same close control as Settings. */}
-      <ModalCloseToolbar onPress={close} />
+      <ModalCloseToolbar onPress={() => close()} />
     </>
   );
 }

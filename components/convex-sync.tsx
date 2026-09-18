@@ -1,3 +1,5 @@
+import { acknowledgeAssessment, applySavedAssessment, getPendingAssessments, subscribeAssessments } from '@/services/assessments';
+import { applyProStatus, saveFeedback } from '@/services/pro-access';
 import { useAuth } from '@clerk/expo';
 import { useConvexAuth, useMutation, useQuery } from 'convex/react';
 import { useEffect, useRef, useState } from 'react';
@@ -18,7 +20,7 @@ import {
 } from '@/lib/sync-plan';
 import {
   applyWordVerdicts,
-  getRecords,
+  getBaseRecords as getRecords,
   getWordDeltas,
   importHistory,
   removeWordDeltas,
@@ -106,6 +108,7 @@ function AuthenticatedSync() {
   return (
     <>
       <SessionSync />
+      <PremiumSync />
       <PassageSync />
       <SettingsSync />
     </>
@@ -216,7 +219,7 @@ function SessionSync() {
       for (const row of fresh) {
         if (!stored.has(row.clientId)) continue;
         if (row.wordDeltas && row.wordDeltas.length > 0) {
-          applyWordVerdicts(expandWordDeltas(row.wordDeltas), row.completedAt, row.endedReason);
+          applyWordVerdicts(expandWordDeltas(row.wordDeltas), row.completedAt, row.endedReason, row.clientId);
         }
       }
     }
@@ -348,5 +351,55 @@ function SettingsSync() {
     };
   }, [push, remote]);
 
+  return null;
+}
+
+function PremiumSync() {
+  const status = useQuery(api.pro.status, {});
+  const save = useMutation(api.supplements.save);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const page = useQuery(api.supplements.page, { cursor });
+  const [feedbackCursor, setFeedbackCursor] = useState<string | null>(null);
+  const feedback = useQuery(api.supplements.feedback, { cursor: feedbackCursor });
+  useEffect(() => { if (status && !isSyncSuspended()) applyProStatus(status); }, [status]);
+  useEffect(() => {
+    let running = false;
+    let cancelled = false;
+    const push = async () => {
+      if (running || isSyncSuspended()) return;
+      running = true;
+      try {
+        for (const row of getPendingAssessments()) {
+          await save(row);
+          if (cancelled || isSyncSuspended()) return;
+          acknowledgeAssessment(row.sessionId);
+        }
+      } catch { /* Keep the durable outbox for the next authenticated sync. */ }
+      finally { running = false; }
+    };
+    void push();
+    const unsubscribe = subscribeAssessments(() => void push());
+    return () => { cancelled = true; unsubscribe(); };
+  }, [save]);
+  useEffect(() => {
+    if (!page || isSyncSuspended()) return;
+    const apply = () => {
+      if (isSyncSuspended()) return;
+      let applied = true;
+      for (const row of page.page) applied = applySavedAssessment(row.sessionId, row.payload) && applied;
+      // Wait for base sessions and their verdict journals before advancing.
+      if (applied && !page.isDone) setCursor(page.continueCursor);
+    };
+    apply();
+    return subscribeHistory(apply);
+  }, [page]);
+  useEffect(() => {
+    if (!feedback || isSyncSuspended()) return;
+    for (const row of feedback.page) {
+      const match = /^coach:(.+):(azure|live)$/.exec(row.key);
+      if (match) saveFeedback(`coach/${match[1]}/${match[2]}`, JSON.parse(row.result));
+    }
+    if (!feedback.isDone) setFeedbackCursor(feedback.continueCursor);
+  }, [feedback]);
   return null;
 }

@@ -1,6 +1,8 @@
 import { ConfigContext, ExpoConfig } from 'expo/config';
 import { withEntitlementsPlist, type ConfigPlugin } from 'expo/config-plugins';
 
+import { assertProductionEnvironment } from './lib/release-config';
+
 /**
  * LOCAL ONLY. A free Apple "Personal Team" cannot sign an app that carries the
  * Sign in with Apple entitlement, and both `@clerk/expo` and
@@ -69,6 +71,7 @@ function getIosIcon() {
 }
 
 export default ({ config }: ConfigContext): ExpoConfig => {
+  assertProductionEnvironment(process.env);
   const iosIcon = getIosIcon();
   const baseScheme = typeof config.scheme === 'string' ? config.scheme : 'speakwell';
   const easProjectId = (config.extra?.eas as { projectId?: unknown } | undefined)?.projectId;
@@ -92,7 +95,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: getName(config.name ?? 'SpeakWell'),
     scheme: getScheme(baseScheme),
     runtimeVersion: {
-      policy: 'appVersion',
+      // Automatic production OTA delivery requires a native compatibility
+      // boundary even when the app's marketing version stays the same.
+      // Existing preview/development builds retain their appVersion runtime.
+      policy: process.env.APP_VARIANT === 'production' ? 'fingerprint' : 'appVersion',
     },
     updates: {
       ...config.updates,

@@ -24,11 +24,21 @@
  */
 
 import { Observe } from 'expo-observe';
+import { randomUUID } from 'expo-crypto';
 
 import type { TranscriptionFailure } from '@/services/freestyle-transcription';
 import type { SessionEndedReason, SessionMode } from '@/types/history';
 import type { PracticeErrorCode, SessionResult } from '@/types/session';
 import type { AccentLocale } from '@/types/settings';
+
+/** eventId survives transport retries, allowing duplicate deliveries to be deduplicated. */
+function logEvent(name: string, options: NonNullable<Parameters<typeof Observe.logEvent>[1]>) {
+  try {
+    Observe.logEvent(name, { ...options, attributes: { ...options.attributes, eventId: randomUUID() } });
+  } catch {
+    // Telemetry must never turn a saved result or successful purchase into an error.
+  }
+}
 
 // ---- global attributes ------------------------------------------------------
 
@@ -56,6 +66,7 @@ function setGlobal(key: string, value: string | number | boolean) {
  * Worth tagging on everything: a mock session never touches the recognizer or
  * Azure, so its timings and scores must not be read as field data.
  */
+setGlobal('event_schema_version', 2);
 setGlobal('practice_engine', process.env.EXPO_PUBLIC_MOCK_PRACTICE === '1' ? 'mock' : 'real');
 
 /**
@@ -84,14 +95,18 @@ export function setAuthState(state: 'signed-in' | 'signed-out') {
  * checkpoint there, and so does a restart mid-read.
  */
 export function practiceStarted(a: {
+  attemptId: string;
+  previewId?: string;
   mode: SessionMode;
   passageId?: string;
   topicId?: string;
   targetWpm?: number;
 }) {
-  Observe.logEvent('practice.started', {
+  logEvent('practice.started', {
     displayName: 'Practice started',
     attributes: {
+      attemptId: a.attemptId,
+      ...(a.previewId ? { previewId: a.previewId } : {}),
       mode: a.mode,
       // Ids only. A custom passage's title is the user's own writing.
       contentId: a.passageId ?? a.topicId ?? 'unknown',
@@ -105,18 +120,17 @@ export function practiceStarted(a: {
  * every terminal path uses — finished the passage, stopped early, or abandoned
  * by dismissing or restarting mid-read — in both passage and freestyle mode.
  *
- * `scoringSource` is the one to watch. 'live' means Azure was unavailable or
- * failed and the scores came from the live recognition layer instead, which
- * surfaces to nobody: without it in the data, an Azure region outage looks like
- * everyone's pronunciation quietly getting less precise.
+ * `scoringSource: live` is the normal basic result. Paid assessment happens
+ * later and has its own assessment.* events; it is not a degradation signal.
  */
 export function practiceEnded(
   result: SessionResult,
-  meta: { mode: SessionMode; endedReason: SessionEndedReason; persisted: boolean },
+  meta: { attemptId: string; mode: SessionMode; endedReason: SessionEndedReason; persisted: boolean; persistenceReason: string },
 ) {
-  Observe.logEvent('practice.ended', {
+  logEvent('practice.ended', {
     displayName: 'Practice ended',
     attributes: {
+      attemptId: meta.attemptId,
       mode: meta.mode,
       endedReason: meta.endedReason,
       scoringSource: result.source,
@@ -130,6 +144,7 @@ export function practiceEnded(
       // False also covers "nothing was spoken, so there was nothing to save",
       // which is why it is a separate signal from `endedReason`.
       persisted: meta.persisted,
+      persistenceReason: meta.persistenceReason,
     },
   });
 }
@@ -139,48 +154,27 @@ export function practiceEnded(
  * discriminant the error UI branches on, so a spike in 'recognition-unavailable'
  * points at devices and 'permission-denied' points at the onboarding ask.
  */
-export function practiceFailed(a: { code: PracticeErrorCode; mode: SessionMode }) {
-  Observe.logEvent('practice.failed', {
+export function practiceFailed(a: { attemptId: string; code: PracticeErrorCode; mode: SessionMode }) {
+  logEvent('practice.failed', {
     displayName: 'Practice failed',
     severity: 'error',
-    attributes: { code: a.code, mode: a.mode },
+    attributes: { attemptId: a.attemptId, code: a.code, mode: a.mode },
   });
 }
 
-/**
- * Why an attempt reached the end scored, but not by Azure. Each of these is a
- * different problem wearing the same face on the Results screen:
- *
- * - 'azure-unconfigured'  the build shipped without the key or region
- * - 'azure-failed'        the assessment request threw
- * - 'azure-no-audio'      nothing gradeable came out of the session, so Azure
- *                         was never asked
- * - 'azure-unusable'      Azure answered and the result builder rejected it
- * - 'processing-failed'   the whole stop-and-score path threw
- */
-export type ScoringDegradedReason =
-  | 'azure-unconfigured'
-  | 'azure-failed'
-  | 'azure-no-audio'
-  | 'azure-unusable'
-  | 'processing-failed';
+/** The basic stop-and-process path failed; paid assessment failures use assessment.failed. */
+export type ScoringDegradedReason = 'processing-failed';
 
-/**
- * Scoring fell back from Azure Pronunciation Assessment to the live-derived
- * measure. The attempt still ends with a score, so this is invisible in the app
- * and invisible in a crash reporter. `locale` is included because the accent
- * decides which reference Azure grades against, and a failure concentrated in
- * one locale is a different problem from a regional outage.
- */
 export function scoringDegraded(a: {
   reason: ScoringDegradedReason;
+  mode: SessionMode;
   locale: AccentLocale;
   durationMs: number;
 }) {
-  Observe.logEvent('practice.scoring_degraded', {
+  logEvent('practice.scoring_degraded', {
     displayName: 'Scoring degraded',
     severity: 'warn',
-    attributes: { reason: a.reason, locale: a.locale, durationMs: a.durationMs },
+    attributes: { mode: a.mode, reason: a.reason, locale: a.locale, durationMs: a.durationMs },
   });
 }
 
@@ -189,11 +183,11 @@ export function scoringDegraded(a: {
  * Both latency and transcript quality change with it, which means a session that
  * fell back is not comparable to one that did not.
  */
-export function recognitionFallback(a: { reason: string }) {
-  Observe.logEvent('practice.recognition_fallback', {
+export function recognitionFallback(a: { mode: SessionMode; reason: string }) {
+  logEvent('practice.recognition_fallback', {
     displayName: 'Recognition fell back to network',
     severity: 'warn',
-    attributes: { from: 'on-device', to: 'network', reason: a.reason },
+    attributes: { mode: a.mode, from: 'on-device', to: 'network', reason: a.reason },
   });
 }
 
@@ -220,53 +214,151 @@ export function transcriptionFallback(a: {
  * attempt has no playback and its waveform is reconstructed from the mic meter,
  * so Results silently loses a feature rather than showing an error.
  */
-export function audioProcessingFailed(a: { segments: number }) {
-  Observe.logEvent('practice.audio_processing_failed', {
+export function audioProcessingFailed(a: { mode: SessionMode; segments: number }) {
+  logEvent('practice.audio_processing_failed', {
     displayName: 'Audio processing failed',
     severity: 'warn',
-    attributes: { segments: a.segments },
+    attributes: { mode: a.mode, segments: a.segments },
   });
+}
+
+// ---- lifecycle correlation --------------------------------------------------
+
+/** Random telemetry identifiers only. Never reuse a grant, session key, or user ID. */
+export const newTelemetryId = () => randomUUID();
+
+export function beginPracticeAttempt(a: Omit<Parameters<typeof practiceStarted>[0], 'attemptId'>) {
+  const id = newTelemetryId();
+  let settled = false;
+  practiceStarted({ ...a, attemptId: id });
+  return {
+    id,
+    end(result: SessionResult, meta: Omit<Parameters<typeof practiceEnded>[1], 'attemptId' | 'mode'>) {
+      if (settled) return;
+      settled = true;
+      practiceEnded(result, { ...meta, attemptId: id, mode: a.mode });
+    },
+    cancel() {
+      if (settled) return;
+      settled = true;
+      logEvent('practice.cancelled', { displayName: 'Practice cancelled before a result', attributes: { attemptId: id, mode: a.mode } });
+    },
+    fail(code: PracticeErrorCode) {
+      if (settled) return;
+      settled = true;
+      practiceFailed({ attemptId: id, mode: a.mode, code });
+    },
+  };
+}
+export type PracticeAttempt = ReturnType<typeof beginPracticeAttempt>;
+
+/** Deliberately allowlisted: provider messages and arbitrary error codes can contain user content. */
+const failureCodes = [
+  'authentication_required', 'upgrade_required', 'preview_exhausted', 'preview_expired',
+  'recording_unavailable', 'provider_failure', 'processing', 'temporarily_throttled',
+  'invalid_request', 'timeout', 'cancelled',
+] as const;
+export function telemetryFailure(error: unknown): string {
+  const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+  if (typeof code === 'string' && failureCodes.some(value => value === code)) return code;
+  if (error instanceof TypeError) return 'network_or_runtime';
+  return 'unknown';
+}
+
+type FeedbackContext = { attemptId?: string; previewId?: string; mode: SessionMode; preview: boolean; cached?: boolean };
+/** One ID and at most one terminal event per request, including retries and cancellation. */
+export function beginFeedbackOperation(kind: 'assessment' | 'coaching', context: FeedbackContext) {
+  const operationId = newTelemetryId();
+  const start = performance.now();
+  let settled = false;
+  const attributes = { ...context, operationId };
+  logEvent(`${kind}.started`, { displayName: `${kind} started`, attributes });
+  return {
+    finish(outcome: 'completed' | 'failed' | 'cancelled', reason?: string) {
+      if (settled) return;
+      settled = true;
+      logEvent(`${kind}.${outcome}`, {
+        displayName: `${kind} ${outcome}`,
+        severity: outcome === 'failed' ? 'warn' : 'info',
+        attributes: { ...attributes, durationMs: Math.round(performance.now() - start), ...(reason ? { reason } : {}) },
+      });
+    },
+  };
 }
 
 // ---- monetization -----------------------------------------------------------
 
-/**
- * Where a paywall came from. The same RevenueCat-hosted screen answers two
- * different questions depending on which raised it, so they are never pooled:
- * 'gate' is the app blocking a locked feature, 'explicit' is the customer going
- * looking for the plans.
- */
-export type PaywallSource = 'gate' | 'explicit';
+export type PaywallSource = 'explicit' | 'coach' | 'pronunciation' | 'exercise' | 'assessment' | 'analytics' | 'unknown';
+export function paywallSource(value: string | undefined): PaywallSource {
+  return value === undefined ? 'explicit'
+    : ['explicit', 'coach', 'pronunciation', 'exercise', 'assessment', 'analytics'].includes(value) ? value as PaywallSource : 'unknown';
+}
+type PaywallAttributes = { paywallId: string; source: PaywallSource };
+type PurchaseAttributes = PaywallAttributes & { operationId: string };
+type ProEvents = {
+  feature_tapped: { feature: Exclude<PaywallSource, 'explicit' | 'unknown'> };
+  paywall_viewed: PaywallAttributes;
+  paywall_ready: PaywallAttributes & { durationMs: number; planCount: number };
+  paywall_failed: PaywallAttributes & { reason: 'store_unavailable' | 'no_plans' | 'offering_failed'; durationMs: number };
+  paywall_closed: PaywallAttributes & { outcome: 'dismissed' | 'unlocked'; durationMs: number; ready: boolean };
+  purchase_started: PurchaseAttributes & { product: string };
+  purchase_resolved: PurchaseAttributes & { product: string; outcome: 'purchased' | 'pending' | 'failed' | 'cancelled'; durationMs: number };
+  purchase_blocked: PaywallAttributes & { reason: 'identity_not_ready'; action: 'purchase' | 'restore' };
+  restore_started: PurchaseAttributes;
+  restore_resolved: PurchaseAttributes & { outcome: 'restored' | 'nothingToRestore' | 'failed'; durationMs: number };
+  verification_resolved: PurchaseAttributes & { action: 'purchase' | 'restore'; outcome: 'verified' | 'pending' | 'failed'; durationMs: number };
+  activated: PurchaseAttributes & { action: 'purchase' | 'restore' };
+  preview_requested: { previewId: string };
+  preview_started: { previewId: string };
+  preview_failed: { previewId: string; reason: string };
+  // Completion means coaching has finished, after any required assessment.
+  preview_completed: { attemptId?: string; previewId?: string };
+};
 
-/**
- * How a paywall resolved. One event rather than a presented/closed pair, because
- * the outcome already says whether it was ever shown: 'notPresented' means the
- * customer was entitled and the gate opened without interrupting them, and
- * 'error' means the SDK could not present it at all.
- */
-export function paywallResolved(a: { source: PaywallSource; outcome: string }) {
-  Observe.logEvent('paywall.resolved', {
-    displayName: 'Paywall resolved',
-    // 'error' is the SDK failing to show a screen the app decided to show, which
-    // is a broken purchase path rather than a customer declining.
-    severity: a.outcome === 'error' ? 'error' : 'info',
-    attributes: { source: a.source, outcome: a.outcome },
+export function proEvent<K extends keyof ProEvents>(event: K, attributes: ProEvents[K]) {
+  const outcome = 'outcome' in attributes ? attributes.outcome : undefined;
+  logEvent(`pro.${event}`, {
+    displayName: `SpeakWell Pro ${event.replaceAll('_', ' ')}`,
+    severity: event.endsWith('_failed') || outcome === 'failed' ? 'warn' : 'info',
+    attributes,
   });
 }
 
-// ---- errors -----------------------------------------------------------------
-//
-// Errors need nothing from this module. The three paths Observe records them by
-// are all owned elsewhere:
-//
-// 1. Unhandled JS errors: automatic. `expo-app-metrics` wraps `ErrorUtils` when
-//    the package is first imported, which is before any of our code runs.
-// 2. Render-phase errors: the boundary `ObserveRoot` mounts in `app/_layout.tsx`,
-//    which is the only path that captures a React component stack.
-// 3. Handled errors: `Observe.reportError(cause)` at the `catch` that swallowed
-//    them. Called directly at the call site, because unlike an event it carries
-//    no name to keep stable and no attribute shape to review.
-//
-// The events above stay separate from all three on purpose: a degraded score or
-// a paywall that would not present is a product outcome with structured
-// attributes, not an exception, and pooling them would bury both.
+const completedPreviews = new WeakSet<object>();
+/** Results remounts and cached coaching must not count the same preview twice. */
+export function completePreview(result: SessionResult) {
+  const context = result.premiumContext;
+  if (!context?.grantId || completedPreviews.has(context)) return;
+  completedPreviews.add(context);
+  proEvent('preview_completed', { attemptId: result.telemetryAttemptId, previewId: result.telemetryPreviewId });
+}
+
+/** A view means the route opened; ready means purchasable plans actually loaded. */
+export function beginPaywallVisit(source: PaywallSource) {
+  const attributes = { paywallId: newTelemetryId(), source };
+  const start = performance.now();
+  let closed = false;
+  let loaded = false;
+  let loadSettled = false;
+  const durationMs = () => Math.round(performance.now() - start);
+  proEvent('paywall_viewed', attributes);
+  return {
+    attributes,
+    ready(planCount: number) {
+      if (closed || loadSettled) return;
+      loaded = true;
+      loadSettled = true;
+      proEvent('paywall_ready', { ...attributes, planCount, durationMs: durationMs() });
+    },
+    failed(reason: ProEvents['paywall_failed']['reason']) {
+      if (closed || loadSettled) return;
+      loadSettled = true;
+      proEvent('paywall_failed', { ...attributes, reason, durationMs: durationMs() });
+    },
+    close(outcome: 'dismissed' | 'unlocked') {
+      if (closed) return;
+      closed = true;
+      proEvent('paywall_closed', { ...attributes, outcome, ready: loaded, durationMs: durationMs() });
+    },
+  };
+}

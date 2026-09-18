@@ -10,7 +10,12 @@ import { languageOf, recognizerLocale } from '@/constants/accents';
 import { countDiscourseMarkers, countFillers } from '@/lib/fillers';
 import { tokenizeTranscript } from '@/services/alignment';
 import { transcribeFreestyleRecording } from '@/services/freestyle-transcription';
-import { transcriptionFallback } from '@/services/observe-events';
+import {
+  audioProcessingFailed,
+  recognitionFallback,
+  scoringDegraded,
+  transcriptionFallback,
+} from '@/services/observe-events';
 import { claimEngine, releaseEngine } from '@/services/recognition-owner';
 import { buildFreestyleResult } from '@/services/scoring';
 import { getAccentLocale } from '@/services/settings';
@@ -310,6 +315,7 @@ export function useFreestyleSession(): FreestyleSession {
 
     if (event.error === 'language-not-supported' || event.error === 'service-not-allowed') {
       if (m.mode === 'on-device' && !m.retriedNetwork) {
+        recognitionFallback({ mode: 'freestyle', reason: event.error });
         m.retriedNetwork = true;
         m.mode = 'network';
         return; // the trailing `end` event performs the restart
@@ -329,6 +335,7 @@ export function useFreestyleSession(): FreestyleSession {
     if (m.status !== 'listening' || m.expectEnd) return;
     if (m.endedCount < m.startedCount) return;
     if (m.mode === 'on-device' && !m.retriedNetwork && m.lastTransientError) {
+      recognitionFallback({ mode: 'freestyle', reason: m.lastTransientError.code });
       m.retriedNetwork = true;
       m.mode = 'network';
       m.lastTransientError = null;
@@ -439,6 +446,7 @@ export function useFreestyleSession(): FreestyleSession {
       }
     } catch (e) {
       if (__DEV__) console.warn('[freestyle] audio processing failed:', e);
+      audioProcessingFailed({ mode: 'freestyle', segments: m.segmentUris.length });
       audioUri = null;
       waveform = null;
     }
@@ -607,6 +615,7 @@ export function useFreestyleSession(): FreestyleSession {
           finalResult = await finishProcessing();
         } catch (e) {
           if (__DEV__) console.warn('[freestyle] processing failed entirely:', e);
+          scoringDegraded({ mode: 'freestyle', reason: 'processing-failed', locale: m.locale, durationMs: Math.max(1, Math.round(m.accumulatedActiveMs)) });
           finalResult = buildFreestyleResult({
             transcript: m.finalParts.join(' '),
             paceWpm: 0,

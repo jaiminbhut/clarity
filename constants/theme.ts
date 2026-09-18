@@ -18,6 +18,7 @@
  */
 
 export { colors, type ColorSchemeName, type ThemeColors } from './colors';
+export { buttons } from './controls';
 export { fontAssets } from './font-assets';
 export { fonts, type FontFace, type FontFaceName } from './fonts';
 export { marketing } from './marketing';

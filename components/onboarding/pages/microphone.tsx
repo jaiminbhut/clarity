@@ -8,7 +8,6 @@ import { AppState, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { OnboardingScreen } from '@/components/onboarding';
 import { ThemedText } from '@/components/ui';
 import { onboarding, spacing } from '@/constants/theme';
-import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSetting } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -41,8 +40,7 @@ const ROWS: { icon: IconSvgElement; text: string }[] = [
  * Settings and leaves "Continue without it" underneath; the engine already
  * handles a refusal at first practice.
  */
-export default function MicrophoneStep() {
-  useMarkInteractive();
+export default function MicrophoneStep({ active }: { active: boolean }) {
   const { colors } = useTheme();
   const [, setCompletedAt] = useSetting('onboardingCompletedAt');
   const [requesting, setRequesting] = useState(false);
@@ -57,7 +55,7 @@ export default function MicrophoneStep() {
     // The simulator QA build never touches the native recognizer. Asking for a
     // permission it cannot use would put a system dialog back in front of the
     // deterministic practice fixture this profile exists to exercise.
-    if (SIMULATED_SPEECH) return;
+    if (SIMULATED_SPEECH || !active) return;
     let alive = true;
     const refresh = async () => {
       try {
@@ -79,7 +77,7 @@ export default function MicrophoneStep() {
       alive = false;
       subscription.remove();
     };
-  }, []);
+  }, [active]);
 
   /**
    * The last step, and the only one whose write is load-bearing: the root guard

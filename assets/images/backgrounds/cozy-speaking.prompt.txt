@@ -1,0 +1,10 @@
+Generated with the built-in image generation tool.
+
+Use case: stylized-concept.
+Asset type: full-bleed portrait background illustration for an iPhone speech fluency practice app.
+Generate a calm, cozy, beautifully crafted background that makes speaking into a microphone feel welcoming and low-pressure. Canvas 1080 x 2340 pixels, tall modern iPhone aspect ratio 6:13, portrait.
+Scene: a softly sunlit quiet interior suggested by an ivory plaster wall, subtle curved alcove and pale warm surface, with very little clutter. Main subject: one elegant rounded powder-blue desktop microphone with a fine realistic grille and small rounded stand, placed below center, occupying about one quarter of the canvas height. Beside and behind the microphone, a subtle continuous flowing ribbon of translucent blue sound waves suggests smooth, relaxed speech and steady breath. The waves should be organic and understated, no sharp spikes or technical chart.
+Style: refined tactile 3D editorial illustration, softly rounded forms, matte ceramic-like materials, delicate surface grain, soft ambient shadows, gentle depth of field. Sophisticated and warm, never toy-like or busy.
+Palette: app-inspired soft off-white and pale cool gray with powder-blue accents and a warm sunlight glow.
+Composition: large quiet negative space across the upper 42 percent for app headings, bottom 18 percent simple and quiet for app controls. Keep all important imagery safely away from edges. Artwork fills the entire image.
+Constraints: no text, lettering, logos, watermarks, people, UI, buttons, phone frame, borders, emoji, or floating app icons. Render the background artwork itself.

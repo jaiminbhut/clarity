@@ -12,4 +12,37 @@ export const onboarding = {
   radioBorder: 2,
   progressHeight: 4,
   pressedOpacity: 0.65,
+  welcome: {
+    contentWidth: 560,
+    copyWidth: 340,
+    markSize: 104,
+    compactMarkSize: 88,
+    markOverlap: 48,
+    displayFontScale: 1.3,
+    compactWidth: 405,
+    collage: {
+      heightRatio: 1.15,
+      maxViewportRatio: 0.51,
+      compactMaxViewportRatio: 0.47,
+      outlineWidth: 1,
+      bleed: 12,
+      columnOffsets: [-12, 44, 4],
+      entranceDistance: 88,
+      entranceDuration: 1000,
+      fadeStart: '48%',
+      fadeEnd: '96%',
+      // Viewports in the original 440 × 956 point simulator captures. The
+      // original screenshots stay intact; these windows hide system chrome.
+      sourceWidth: 440,
+      sourceHeight: 956,
+      crops: {
+        session: { x: 0, y: 40, width: 440, height: 884 },
+        analytics: { x: 0, y: 72, width: 440, height: 866 },
+        practice: { x: 0, y: 76, width: 440, height: 808 },
+        results: { x: 0, y: 64, width: 440, height: 406 },
+        words: { x: 14, y: 170, width: 412, height: 620 },
+        skills: { x: 14, y: 550, width: 412, height: 364 },
+      },
+    },
+  },
 } as const;

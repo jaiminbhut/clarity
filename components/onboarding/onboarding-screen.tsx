@@ -33,8 +33,7 @@ export type OnboardingScreenProps = {
  * with the keyboard frame-for-frame instead of hiding behind it. The offset
  * replaces the safe-area padding with the same gap as the horizontal inset.
  *
- * Nothing here animates in. The steps are tapped through quickly, and a
- * staggered reveal on every push read as lag.
+ * The pager moves this whole page as one unit, without staggered entrances.
  */
 export function OnboardingScreen({
   title,

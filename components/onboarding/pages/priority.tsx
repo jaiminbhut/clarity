@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -6,7 +5,6 @@ import { ChoiceRow, OnboardingScreen } from '@/components/onboarding';
 import { OptionCard } from '@/components/ui';
 import { SKILL_GOALS, SKILL_ICONS, SKILL_LABELS, SKILL_ORDER } from '@/constants/metrics';
 import { spacing } from '@/constants/theme';
-import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSetting } from '@/hooks/use-settings';
 import type { SkillKey } from '@/types/history';
 
@@ -16,8 +14,7 @@ import type { SkillKey } from '@/types/history';
  * (`lib/recommendations.ts`). Nothing is preselected, and "Not sure yet" is a
  * real answer that stores null.
  */
-export default function PriorityStep() {
-  useMarkInteractive();
+export default function PriorityStep({ onContinue }: { onContinue: () => void }) {
   const [priority, setPriority] = useSetting('prioritySkill');
   const [writeFailed, setWriteFailed] = useState(false);
   // The store's default is already null, so "Not sure yet" cannot read its
@@ -41,7 +38,7 @@ export default function PriorityStep() {
         // tapped is not an answer: the field stays unstamped so the account's
         // own choice can still arrive from another device.
         if (notSure || priority !== null) setWriteFailed(!setPriority(priority));
-        router.push('/(onboarding)/microphone');
+        onContinue();
       }}
       note={writeFailed ? 'That choice could not be saved. Your device may be out of storage.' : null}>
       <View style={styles.list}>

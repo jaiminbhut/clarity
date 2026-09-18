@@ -12,6 +12,11 @@ const AppReadyContext = createContext(true);
 /** Wraps the routes; fed the splash-finished flag by the root layout. */
 export const AppReadyProvider = AppReadyContext.Provider;
 
+/** For entrances whose full duration should be visible after the splash. */
+export function useAppReady() {
+  return use(AppReadyContext);
+}
+
 /**
  * Reports Time to Interactive to EAS Observe for the screen that calls it.
  *

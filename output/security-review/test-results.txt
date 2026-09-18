@@ -1,0 +1,200 @@
+$ bun scripts/test-history.ts && bun scripts/test-sync.ts && bun scripts/test-stats.ts && bun scripts/test-alignment.ts && bun scripts/test-scoring.ts && bun scripts/test-wav.ts && bun scripts/test-entitlements.ts && bun scripts/test-settings.ts && bun scripts/test-pro.ts && bun scripts/test-security.tsx
+
+== record keys
+
+== parseRecord: validation
+
+== parseRecord: schema upgrades
+
+== store: hydrate, append, snapshot identity
+
+== store: write failure semantics
+
+== store: quarantine isolates a bad record
+
+== store: legacy sessions.json migration
+
+== store: crash recovery from a checkpoint
+
+== store: word mastery aggregates
+
+== store: export / import
+
+== store: clear
+
+113 passed, 0 failed
+
+== session push plan
+
+== session shape round trip
+
+== word-verdict sidecar in the history store
+
+== passage plan
+
+== settings plan
+
+== settings store methods work detached
+
+51 passed, 0 failed
+
+== dayKey
+
+== streak
+
+== todayProgress / weeklyHistory
+
+== skillProfile
+
+== totals / bestSession / topChallengingWords
+
+== sessionSkills / speakingScore / skillWindow / scoreBand / focusSkill
+
+== dailySpeakingScores / recordsBetween / longestStreakRange
+
+== recommend
+
+== isScorable / the eligibility gate
+
+== dayKeyAt / recordDayKey (timezone-stable bucketing)
+
+== startOfLocalDay / msUntilNextLocalMidnight
+
+== speakingSummary
+
+== DST-safe day stepping
+
+== speakingSummary: deltas need a prior window
+
+136 passed, 0 failed
+
+== tokenizeTranscript
+
+== sequential interim/final progression
+
+== retroactive interim mutation
+
+== skipped words within tolerance
+
+== beyond skip tolerance -> insertion
+
+== repeated words
+
+== fillers: finals only, unigrams + bigrams
+
+== prefix partial match on trailing interim token
+
+== fuzzy substitution recovery
+
+== reference-aware hypothesis reranking
+
+== contextual string construction
+
+== segments: pause/resume keeps the anchor
+
+== Android-style transcript reset without beginSegment
+
+== WPM trailing window
+
+== restart resets everything
+
+== stop before trailing final: pending interim counts
+
+== contextual strings: phrase-first, near the frontier
+
+== hypothesis selection: word timings survive reranking
+
+74 passed, 0 failed
+
+== mapping: one to one
+
+== mapping: a split compound no longer shifts its neighbours
+
+== mapping: a mispronounced part makes the whole compound orange
+
+== mapping: merged reference tokens
+
+== mapping: an unmatchable word is dropped, not consumed
+
+== mapping: insertions anchor after the last consumed word
+
+== mapping: phoneme and syllable detail survives the fold
+
+== pauses from word spans
+
+== pace from word spans
+
+== buildAzureResult: Azure timings override the live pace and pauses
+
+== parser: a real en-US phoneme response
+
+69 passed, 0 failed
+
+== parseWavHeader roundtrip
+
+== parseWavHeader walks extra chunks
+
+== sliceWav
+
+== concatWavs
+
+== downsampleWaveform
+
+== scoring: paceScore / fillerScore
+
+== scoring: buildChunks packs sentences <=28s and respects segments
+
+== scoring: long readings split into multiple <=28s chunks
+
+== scoring: unread trailing sentences excluded
+
+== scoring: azure aggregation + word mapping
+
+== scoring: all-chunks-failed returns null; live fallback works
+
+77 passed, 0 failed
+
+== entitlements: no subscription
+
+== entitlements: only the active map grants access
+
+== entitlements: active subscription
+
+== entitlements: trial, cancelled, lifetime, billing issue
+
+== entitlements: family sharing and management URL
+
+32 passed, 0 failed
+
+== defaults
+
+== snapshot identity is stable
+
+== writes persist and notify
+
+== a corrupt accent never reaches the Azure request
+
+== an unverifiable write leaves the snapshot alone
+
+== an unreadable backend still boots
+
+== reset
+
+== onboarding fields
+
+== corrupt onboarding values fall back
+
+== write stamps and remote application
+
+== confirming an unchanged value stamps it
+
+== accent catalog
+
+75 passed, 0 failed
+{"event":"subscription.reconciled","type":"TRANSFER","accounts":2}
+{"event":"subscription.reconciled","type":"CANCELLATION","accounts":1}
+{"event":"subscription.reconciled","type":"RENEWAL","accounts":1}
+70 premium checks passed
+{"event":"subscription.reconciled","type":"INITIAL_PURCHASE","accounts":1}
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+59 security regression checks passed

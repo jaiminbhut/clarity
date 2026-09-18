@@ -23,6 +23,10 @@ import type { TextStyle } from 'react-native';
 import { fonts } from './fonts';
 
 export const type = {
+  /** The opening welcome screen's two-line promise. */
+  welcomeDisplay: { fontSize: 48, ...fonts.bold, letterSpacing: -1.5, lineHeight: 52 },
+  welcomeDisplayCompact: { fontSize: 44, ...fonts.bold, letterSpacing: -1.3, lineHeight: 48 },
+  welcomeBody: { fontSize: 19, ...fonts.medium, lineHeight: 26 },
   /** Screen-level heading outside a navigation header. */
   largeTitle: { fontSize: 34, ...fonts.bold, letterSpacing: -0.5 },
   /** Section hero, and the big number in a results header. */

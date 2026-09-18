@@ -1,16 +1,17 @@
-import { AppleIcon, GoogleIcon } from '@hugeicons/core-free-icons';
+import { AppleIcon } from '@hugeicons/core-free-icons';
 import { useSignIn } from '@clerk/expo';
 import { useSignInWithApple } from '@clerk/expo/apple';
 import { useSignInWithGoogle } from '@clerk/expo/google';
 import Constants from 'expo-constants';
 import { Observe } from 'expo-observe';
+import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { IntroReveal } from '@/components/splash';
+import { WelcomeHero } from '@/components/onboarding/welcome-hero';
 import { PrimaryButton, ThemedText } from '@/components/ui';
-import { spacing } from '@/constants/theme';
+import { onboarding, spacing } from '@/constants/theme';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -95,7 +96,7 @@ function googleIsMisconfigured(): boolean {
 const GOOGLE_MISCONFIGURED = googleIsMisconfigured();
 
 /**
- * The signed-out screen: a gradient and two native sign-in buttons.
+ * The welcome screen introduces practice above the native sign-in buttons.
  *
  * Both hooks return `{ createdSessionId, setActive }` and need `setActive`
  * called. That is the documented shape for the native hooks; the `finalize()`
@@ -208,82 +209,73 @@ export default function SignInScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Placeholder artwork. Same technique as passage-carousel.tsx and
-          progressive-blur.tsx: a CSS gradient with no gradient package. The
-          stops are theme tokens so it follows the scheme, and both are opaque
-          so iOS and Android draw the same wash (see `accentWash`). */}
+      <StatusBar hidden />
       <View
         style={[
-          StyleSheet.absoluteFill,
-          {
-            experimental_backgroundImage: `linear-gradient(to bottom, ${colors.accentWash} 0%, ${colors.background} 70%)`,
-          },
-        ]}
-      />
-      <View style={{ flex: 1 }} />
-      <View
-        style={[
-          styles.actions,
+          styles.content,
           { paddingBottom: insets.bottom + spacing.xl },
         ]}>
-        {failure ? (
-          <ThemedText variant="footnote" tone="secondary" style={styles.failure}>
-            {failure}
-          </ThemedText>
-        ) : null}
-        {SIMULATOR_AUTH_ERROR ? (
-          <ThemedText
-            variant="footnote"
-            tone="secondary"
-            style={styles.failure}
-            testID="simulator-auth-config-error">
-            {SIMULATOR_AUTH_ERROR}
-          </ThemedText>
-        ) : null}
-        {/* fade={false}: PrimaryButton renders a GlassView, which goes blank
-            under an animated opacity. autoplay: this screen mounts after the
-            splash, so the reveal must replay rather than skip. */}
-        {Platform.OS === 'ios' ? (
-          <IntroReveal order={0} fade={false} autoplay>
+        <WelcomeHero />
+        <View style={styles.actions}>
+          {failure ? (
+            <ThemedText variant="footnote" tone="secondary" style={styles.failure}>
+              {failure}
+            </ThemedText>
+          ) : null}
+          {SIMULATOR_AUTH_ERROR ? (
+            <ThemedText
+              variant="footnote"
+              tone="secondary"
+              style={styles.failure}
+              testID="simulator-auth-config-error">
+              {SIMULATOR_AUTH_ERROR}
+            </ThemedText>
+          ) : null}
+          {Platform.OS === 'ios' ? (
             <PrimaryButton
               title="Continue with Apple"
               icon={AppleIcon}
               disabled={busy}
               onPress={() => run('apple', startAppleAuthenticationFlow)}
             />
-          </IntroReveal>
-        ) : null}
-        <IntroReveal order={1} fade={false} autoplay>
+          ) : null}
           <PrimaryButton
             title="Continue with Google"
-            icon={GoogleIcon}
+            iconImage={require('@/assets/brand/google-g.png')}
+            variant="secondary"
             disabled={busy}
             onPress={onGoogle}
           />
-        </IntroReveal>
-        {SIMULATOR_TEST_EMAIL || DEV_ACCOUNT ? (
-          <Pressable
-            accessibilityRole="button"
-            disabled={busy}
-            onPress={runDev}
-            testID="dev-test-sign-in"
-            style={({ pressed }) => [styles.textButton, { opacity: pressed || busy ? 0.6 : 1 }]}>
-            <ThemedText variant="subhead" tone="tertiary">
-              {SIMULATOR_TEST_EMAIL
-                ? 'Sign in as dev test user'
-                : 'Sign in as dev (development build only)'}
-            </ThemedText>
-          </Pressable>
-        ) : null}
+          {SIMULATOR_TEST_EMAIL || DEV_ACCOUNT ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={runDev}
+              testID="dev-test-sign-in"
+              style={({ pressed }) => [styles.textButton, { opacity: pressed || busy ? onboarding.pressedOpacity : 1 }]}>
+              <ThemedText variant="subhead" tone="tertiary">
+                {SIMULATOR_TEST_EMAIL
+                  ? 'Sign in as dev test user'
+                  : 'Sign in as dev (development build only)'}
+              </ThemedText>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  content: {
+    flex: 1,
+    width: '100%',
+    maxWidth: onboarding.welcome.contentWidth,
+    alignSelf: 'center',
+  },
   actions: {
-    paddingHorizontal: spacing.lg,
     gap: spacing.md,
+    paddingHorizontal: spacing.xxl,
   },
   failure: {
     textAlign: 'center',

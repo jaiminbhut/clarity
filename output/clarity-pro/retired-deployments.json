@@ -1,0 +1,115 @@
+{
+  "checkedAt": "2026-09-09T03:37:04.395Z",
+  "retired": [
+    {
+      "id": "aygtq9kma4",
+      "url": "https://clarityapp--aygtq9kma4.expo.app",
+      "status": 401
+    },
+    {
+      "id": "qp32kn0coq",
+      "url": "https://clarityapp--qp32kn0coq.expo.app",
+      "status": 502
+    },
+    {
+      "id": "1emsgg5irg",
+      "url": "https://clarityapp--1emsgg5irg.expo.app",
+      "status": 502
+    },
+    {
+      "id": "7un47q2d6s",
+      "url": "https://clarityapp--7un47q2d6s.expo.app",
+      "status": 502
+    },
+    {
+      "id": "3tfvw93sbf",
+      "url": "https://clarityapp--3tfvw93sbf.expo.app",
+      "status": 404
+    },
+    {
+      "id": "dgtwpybye4",
+      "url": "https://clarityapp--dgtwpybye4.expo.app",
+      "status": 404
+    },
+    {
+      "id": "wk3s37avhm",
+      "url": "https://clarityapp--wk3s37avhm.expo.app",
+      "status": 404
+    },
+    {
+      "id": "h7qpvqg1i8",
+      "url": "https://clarityapp--h7qpvqg1i8.expo.app",
+      "status": 404
+    },
+    {
+      "id": "mrx5edixml",
+      "url": "https://clarityapp--mrx5edixml.expo.app",
+      "status": 502
+    },
+    {
+      "id": "2abqnylhku",
+      "url": "https://clarityapp--2abqnylhku.expo.app",
+      "status": 404
+    },
+    {
+      "id": "6ig5mj8x50",
+      "url": "https://clarityapp--6ig5mj8x50.expo.app",
+      "status": 502
+    },
+    {
+      "id": "c0nr8kbfeo",
+      "url": "https://exponathan-clarity--c0nr8kbfeo.expo.app",
+      "status": 502
+    },
+    {
+      "id": "2l5msnprnz",
+      "url": "https://exponathan-clarity--2l5msnprnz.expo.app",
+      "status": 404
+    },
+    {
+      "id": "2pth06fngh",
+      "url": "https://exponathan-clarity--2pth06fngh.expo.app",
+      "status": 404
+    },
+    {
+      "id": "z7wbn2w0wc",
+      "url": "https://exponathan-clarity--z7wbn2w0wc.expo.app",
+      "status": 404
+    },
+    {
+      "id": "zsl55vcrb9",
+      "url": "https://exponathan-clarity--zsl55vcrb9.expo.app",
+      "status": 502
+    },
+    {
+      "id": "igb3bmz6z9",
+      "url": "https://exponathan-clarity--igb3bmz6z9.expo.app",
+      "status": 404
+    },
+    {
+      "id": "g2dxef49v6",
+      "url": "https://exponathan-clarity--g2dxef49v6.expo.app",
+      "status": 404
+    }
+  ],
+  "legacy": [
+    {
+      "path": "pronounce",
+      "status": 404,
+      "validOutput": false,
+      "bytes": 311
+    },
+    {
+      "path": "practice-passage",
+      "status": 404,
+      "validOutput": false,
+      "bytes": 311
+    },
+    {
+      "path": "speech-coach",
+      "status": 404,
+      "validOutput": false,
+      "bytes": 311
+    }
+  ]
+}

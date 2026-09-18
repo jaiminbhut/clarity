@@ -6,7 +6,7 @@ SpeakWell is a speech-practice app for iOS and Android. Read a passage, work
 through a one-minute drill, or speak off the cuff. SpeakWell follows along,
 scores the session, and turns the result into a concrete next step.
 
-[Website](https://exponathan-clarity.expo.app/) ·
+[Website](https://clarityapp.expo.app/) ·
 [Join the iOS beta](https://testflight.apple.com/join/CMRNm4w4)
 
 ## What SpeakWell does
@@ -84,7 +84,7 @@ Start the Convex watcher. Its first run links or creates a development deploymen
 and writes the deployment URL and identifier to `.env.local`.
 
 ```bash
-bun run convex
+bun run convex:dev
 ```
 
 Each Convex deployment also needs the Frontend API URL for the matching Clerk
@@ -94,7 +94,7 @@ instance. Set this on the backend, not in `.env.local`:
 bunx convex env set CLERK_FRONTEND_API_URL 'https://your-instance.clerk.accounts.dev'
 ```
 
-Leave `bun run convex` running, then build the native app in another terminal:
+Leave `bun run convex:dev` running, then build the native app in another terminal:
 
 ```bash
 bun run ios
@@ -113,7 +113,9 @@ EAS. These are the groups that matter during setup:
 | Convex auth | `CLERK_FRONTEND_API_URL` | Required on each Convex deployment; set with `convex env set` |
 | Native Google sign-in | `EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID`, `EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME` | Required for configured native Google sign-in; iOS values vary by app variant |
 | Generated features | `AI_GATEWAY_API_KEY` | Enables coaching, generated word-practice passages, and model pronunciation audio |
-| Pronunciation assessment | `EXPO_PUBLIC_AZURE_SPEECH_KEY`, `EXPO_PUBLIC_AZURE_SPEECH_REGION` | Optional; local alignment supplies fallback scoring |
+| Pronunciation assessment | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | Convex env (`convex env set`); optional, local alignment supplies fallback scoring |
+| Freestyle re-transcription | `SARVAM_API_KEY` | Optional; server-only; Indian English and Hindi freestyle keep the on-device transcript without it |
+| Free Apple team dev builds | `IOS_PERSONAL_TEAM` | Local only; strips Sign in with Apple so a free Personal Team can sign the development build |
 | Purchases | `EXPO_PUBLIC_RC_IOS_API_KEY`, `EXPO_PUBLIC_RC_ANDROID_API_KEY` | Required in release builds; development builds use the RevenueCat Test Store by default |
 | Local QA | `EXPO_PUBLIC_MOCK_PRACTICE`, `EXPO_PUBLIC_DEV_SIGNIN_EMAIL`, `EXPO_PUBLIC_DEV_SIGNIN_PASSWORD` | Optional scripted speech and local test-account sign-in |
 | Build behavior | `APP_VARIANT`, `EXPO_PUBLIC_OBSERVE_IN_DEV` | Selects the app variant and optionally sends debug telemetry |
@@ -143,7 +145,7 @@ transcription quality, Azure assessment, and recording playback.
 | `bun start` | Start the native Metro server |
 | `bun run ios` | Build and run the iOS app |
 | `bun run android` | Build and run the Android app |
-| `bun run convex` | Push Convex functions and watch the backend |
+| `bun run convex:dev` | Push Convex functions and watch the backend |
 | `bun run typecheck` | Type-check the app and Convex programs |
 | `bun run test` | Run the history, sync, stats, alignment, scoring, WAV, entitlement, and settings suites |
 | `bun run web` | Start the separate marketing-site route tree |

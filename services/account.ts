@@ -1,3 +1,4 @@
+import { clearPremiumData } from '@/services/pro-access';
 /**
  * The two account exits, in the one order that does not lose data.
  *
@@ -38,6 +39,7 @@ export function clearAccountData() {
   // First, and before any notification goes out: every clear below emits to the
   // sync layer's listeners.
   suspendSync();
+  clearPremiumData();
   clearAccountHistory();
   clearCustomPassages();
   resetSettings();

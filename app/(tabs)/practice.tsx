@@ -1,3 +1,4 @@
+import { ProPreviewCard } from '@/components/pro-preview-card';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
@@ -113,6 +114,7 @@ export default function PracticeScreen() {
         </IntroReveal>
       </View>
 
+      <ProPreviewCard style={{ marginTop: spacing.xl }} />
       {/* Recommended: real-data picks; glass cards → transform-only reveal. */}
       <IntroReveal order={1}>
         <SectionHeader

@@ -19,6 +19,8 @@ const light = {
   // --- Surfaces ---
   /** Screen background. Painted by the navigation theme, so screens don't set it. */
   background: '#F4F4F6',
+  /** Matching RGB at zero alpha prevents a gray band in iOS gradients. */
+  backgroundTransparent: 'rgba(244,244,246,0)',
   /** An opaque raised surface. */
   card: '#FFFFFF',
   /** Tint layered over `GlassView` so glass reads as a card, not a smear. */
@@ -111,6 +113,7 @@ const light = {
 
 const dark: Record<keyof typeof light, string> = {
   background: '#0B0B0D',
+  backgroundTransparent: 'rgba(11,11,13,0)',
   card: '#1A1A1E',
   glassTint: 'rgba(10,10,12,0.55)',
   glassTintStrong: 'rgba(30,30,34,0.72)',

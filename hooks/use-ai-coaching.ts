@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { beginFeedbackOperation, completePreview, telemetryFailure } from '@/services/observe-events';
+import { cachedFeedback } from '@/services/pro-access';
 import { requestAiCoaching } from '@/services/ai-coaching';
 import type {
   AiCoachingBreakdown,
@@ -25,25 +27,37 @@ export function useAiCoaching(result: SessionResult): AiCoachingState & {
 
   useEffect(() => {
     const controller = new AbortController();
+    const context = result.premiumContext;
+    const telemetry = beginFeedbackOperation('coaching', {
+      attemptId: result.telemetryAttemptId,
+      previewId: result.telemetryPreviewId,
+      mode: result.mode ?? 'passage',
+      preview: !!context?.grantId,
+      cached: !!context && !!cachedFeedback(`coach/${context.sessionKey}/${result.source}`),
+    });
     // A stalled server (or dead dev server) never settles the fetch — abort so
     // the card always resolves to an error instead of loading forever.
     let timedOut = false;
     const timeout = setTimeout(() => {
       timedOut = true;
+      telemetry.finish('failed', 'timeout');
       controller.abort();
-    }, 30_000);
+    }, 180_000); // Includes the account queue and the bounded provider request.
     setState({ status: 'loading', breakdown: null, error: null });
 
     requestAiCoaching(result, controller.signal, (partial) => {
       if (controller.signal.aborted) return;
       setState({ status: 'streaming', breakdown: partial, error: null });
-    })
+    }, result.premiumContext)
       .then((breakdown) => {
         if (controller.signal.aborted) return;
+        telemetry.finish('completed');
+        completePreview(result);
         setState({ status: 'success', breakdown, error: null });
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted && !timedOut) return;
+        telemetry.finish('failed', timedOut ? 'timeout' : telemetryFailure(error));
         setState({
           status: 'error',
           breakdown: null,
@@ -58,6 +72,7 @@ export function useAiCoaching(result: SessionResult): AiCoachingState & {
 
     return () => {
       clearTimeout(timeout);
+      telemetry.finish('cancelled', 'screen_left');
       controller.abort();
     };
   }, [attempt, result]);
